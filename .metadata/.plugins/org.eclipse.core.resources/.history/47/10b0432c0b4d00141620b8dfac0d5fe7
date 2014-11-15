@@ -1,0 +1,41 @@
+import com.leapmotion.leap.*;
+
+public class LeapMotionController {
+	//Whether tracking is paused or not.
+	private boolean trackingPaused;
+	
+	//Tracking controller
+	Controller leapController;
+	MainListener leapListener;
+	
+	/**
+	 * Constructor for the leap motion controller class.
+	 */
+	public LeapMotionController(){
+		//Sets tracking to paused.
+		trackingPaused = true;
+		
+		//Now sets up Leap Motion specifics.
+		leapController = new Controller();
+		leapListener = new MainListener();
+		leapController.addListener(leapListener);
+	}
+	
+	/**
+	 * Stops Leap Motion services to ensure proper functioning.
+	 */
+	public void destroyController(){
+		//Stops the listener service.
+		leapController.removeListener(leapListener);
+	}
+}
+
+class MainListener extends Listener {
+	/**
+	 * Activates when the leap motion controller is activated.
+	 */
+	public void onConnected(){
+		//We want to send a message back to the main controller.
+		ProgramController.leapStatus(ProgramController.CONNECTED);
+	}
+}

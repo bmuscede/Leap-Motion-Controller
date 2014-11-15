@@ -1,0 +1,74 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Vector;
+
+
+public class Test {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		String[] words;
+		String[] arg;
+		
+		//Gets the words.
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		String entry = "";
+		try {
+			entry = br.readLine();
+		} catch (IOException ioe) {
+			System.out.println("IO error!");
+			System.exit(1);
+		}
+		
+		words = entry.split(", ");
+		
+		//Gets the offset.
+		try {
+			entry = br.readLine();
+		} catch (IOException ioe) {
+			System.out.println("IO error trying to read your name!");
+			System.exit(1);
+		}
+			
+		arg = entry.split(",");
+		
+		//Now, calculates the words in the domain.
+		for(int i = 0; i < arg.length; i++){
+			int paramOne, paramTwo;
+			String[] nums = arg[i].split(" ");
+			
+			//Gets the parameters.
+			paramOne = Integer.parseInt(nums[0]);
+			paramTwo = Integer.parseInt(nums[1]);
+			
+			String format = "{";
+			
+			for (int j = 0; j < words.length; j++){
+				for (int k = j + 1; k < words.length; k++){
+					//Gets the characters.
+					char firstChar;
+					char secondChar;
+					
+					try{
+						firstChar = words[j].charAt(paramOne - 1);
+						secondChar = words[k].charAt(paramTwo - 1);
+					} catch (Exception e){
+						continue;
+					}
+					
+					if (firstChar == secondChar && !(format.contains(String.valueOf((firstChar))))){
+						format += format + firstChar + ",";
+					}
+				}
+			}
+			
+			//Prints the current line.
+			format += "}";
+			System.out.println(format);
+		}
+	}
+
+}

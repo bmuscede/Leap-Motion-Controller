@@ -1,0 +1,101 @@
+import java.util.ArrayList;
+
+import com.leapmotion.leap.*;
+
+public class HelloWorld {
+	public static Plotter mainWindow;
+	
+    public static void main(String[] args) {
+    	mainWindow = new Plotter("Leap Motion Plotter", "Connecting to Leap Motion controller...");
+        mainWindow.pack();
+        mainWindow.setVisible(true);
+        
+		//Creates a controller to connect to the leap motion daemon.
+		SampleListener listener = new SampleListener();
+		Controller leapController = new Controller();
+		
+		//Adds in the listener to the controller.
+		leapController.addListener(listener);
+		
+		while (true){
+			
+		}
+    }
+}
+
+class SampleListener extends Listener {
+	private boolean handsPresent = false;
+	private ArrayList<ArrayList<ArrayList<Float>>> positionData = 
+			new ArrayList<ArrayList<ArrayList<Float>>>();
+	private int frames = 0;
+	
+    public void onConnect(Controller controller) {
+    	HelloWorld.mainWindow.chart.setTitle("Connected to Leap Motion");
+    }
+
+    public void onFrame(Controller controller) {
+    	//Gets the current frame and hands.
+    	Frame current = controller.frame();
+    	HandList hands = current.hands();
+    	
+    	//Ensures hands are present.
+    	if (hands.count() > 0){
+    		//Messages user if hands are present.
+    		if (!handsPresent){
+    			HelloWorld.mainWindow.chart.setTitle("Hand detected. Collecting position data.");
+    			handsPresent = true;
+    		}
+    		
+    		//Now starts collecting data for hands.
+    		for (int i = 0; i < hands.count(); i++){
+    			//Gets current fingers.
+    			ArrayList<ArrayList<Float>> fingers = new ArrayList<ArrayList<Float>>();
+    			
+    			//Gets the current hand's fingers.
+    			FingerList currentFingers = hands.get(i).fingers();
+    			
+    			//Goes through each finger.
+    			for (int j =0; j < currentFingers.count(); j++){
+    				Vector fingerPos = currentFingers.get(j).tipPosition();
+    				
+    				//Now creates an ArrayList for a specific finger.
+    				ArrayList<Float> currentFinger = new ArrayList<Float>();
+    				currentFinger.add(fingerPos.getX());
+    				currentFinger.add(fingerPos.getY());
+    				currentFinger.add(fingerPos.getZ());
+    				
+    				//Adds it to the fingers.
+    				fingers.add(currentFinger);
+    			}
+    			
+    			//Adds all the fingers to the position data.
+    			positionData.add(fingers);
+    			frames++;
+    		}
+    	} else {
+    		//Messages users once hands are lost.
+    		if (handsPresent){
+    			HelloWorld.mainWindow.chart.setTitle("Connected to Leap Motion");
+    			handsPresent = false;
+    			
+    			//Copies the data in the vector to the array.
+    			HelloWorld.mainWindow.data = new float[2][frames];
+    			int counter = 0;
+    			for (int i = 0; i < positionData.size(); i += 5){
+    				//Gets x and z.
+    				HelloWorld.mainWindow.data[0][counter] = positionData.get(i).get(0).get(0);
+    				HelloWorld.mainWindow.data[1][counter] = positionData.get(i).get(0).get(2);
+    				counter++;
+    			}
+    			
+    			//Finally, updates the chart.
+    			HelloWorld.mainWindow.plot.setData(HelloWorld.mainWindow.data);
+    			frames = 0;
+    		}
+    	}
+    }
+    
+    public ArrayList<ArrayList<ArrayList<Float>>> getPositionData(){
+    	return positionData;
+    }
+}

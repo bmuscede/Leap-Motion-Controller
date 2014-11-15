@@ -1,0 +1,69 @@
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Toolkit;
+
+public class ProgramController {
+	static StatusWindow status;
+	static HandDataWindow handLeft;
+	static HandDataWindow handRight;
+	static LeapMotionController controller;
+	
+	public static final int START_BAR_HEIGHT = 48;
+	public static final int CONNECTED = 1;
+	public static final int NOT_CONNECTED = 0;
+	
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					//Creates each of the new windows.
+					status = new StatusWindow();
+					handLeft = new HandDataWindow(true);
+					handRight = new HandDataWindow(false);
+					
+					//Positions the windows accordingly.
+			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+			        status.setLocation(0, 0);
+			        handLeft.setLocation(0, (int) dim.getHeight() - handLeft.getHeight() - START_BAR_HEIGHT);
+			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
+			        		(int) dim.getHeight() - handRight.getHeight() - START_BAR_HEIGHT);
+			        
+					//Shows each of the windows.
+					status.setVisible(true);
+					handLeft.setVisible(true);
+					handRight.setVisible(true);
+					
+					//Starts the visualizer maximized.
+					Process process = new ProcessBuilder(
+							"C:\\Program Files (x86)\\Leap Motion\\Core Services\\VisualizerApp.exe", "/MIN").start();
+					
+					//Finally, builds the leap motion controller.
+					LeapMotionController controller = new LeapMotionController();
+					while (true){
+						
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+	
+	public static void leapStatus(int statusCode){
+		//Acts on the model based on the Leap Controller.
+		switch (statusCode) {
+			case CONNECTED:
+				//Sets the status of the status bar.
+				status.lblStatus.setText("Status: Connected");
+				break;
+				
+			case NOT_CONNECTED:
+				//Sets the status of the status bar.
+				status.lblStatus.setText("Status: Not Connected");
+				break;
+				
+			default:
+				break;
+		}
+	}
+}

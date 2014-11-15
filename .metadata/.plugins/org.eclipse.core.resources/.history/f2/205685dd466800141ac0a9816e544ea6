@@ -1,0 +1,31 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.util.Vector;
+
+
+public class Test {
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		Vector<String> words = new Vector<String>();
+		
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		while(true){
+			String entry;
+			
+			try {
+				entry = br.readLine();
+			} catch (IOException ioe) {
+				System.out.println("IO error trying to read your name!");
+				System.exit(1);
+			}
+			
+			if (entry.equals(".")) break;
+			
+			words.add(entry);
+		}
+	}
+
+}

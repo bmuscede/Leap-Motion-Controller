@@ -1,0 +1,70 @@
+import java.sql.*;
+import com.leapmotion.leap.Frame;
+
+public class DatabaseController extends Thread {
+	private Connection conn;
+	
+	/**
+	 * This constructor registers a SQLite3 controller that then connects to the
+	 * database. 
+	 * @param dbURL The location (path of the sqlite database)
+	 */
+	public DatabaseController(String dbURL) {
+		try{
+			//Registers the SQLite3 driver.
+			Class.forName("org.sqlite.JDBC");
+			
+			//Now connects to the database.
+			conn = DriverManager.getConnection(dbURL);	
+			
+		} catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Writes a frame to the database under a specific user and session.
+	 * This will allow data to be segmented depending on the user and
+	 * which session they're working on.
+	 * @param userID The ID for the current user working.
+	 * @param session The session ID for the current session of the user working.
+	 * @param currentFrame The frame to be written.
+	 * @return A boolean indicating the success/failure of the program.
+	 */
+	public boolean writeFrame(String userID, String session, Frame currentFrame){
+		//First, generates an SQL statement for the user and frame.
+		String statement = "INSERT INTO Frame VALUES(" +
+				userID + ", " + session + ");";
+		
+		//Next, we execute the SQL statement.
+		try {
+			Statement query = conn.createStatement();
+			query.executeUpdate(statement);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		//Since there was no error, return true.
+		return true;
+	}
+	
+	/**
+	 * Writes an SQL statement that is general.
+	 * @param sql The sql statement to be executed.
+	 * @return Whether or not the execution of the statement was successful.
+	 */
+	public boolean writeSQLStatement(String sql){
+		//Executes the passed SQL statement.
+		try {
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		//If there is no error, returns true.
+		return true;
+	}
+}

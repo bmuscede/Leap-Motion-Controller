@@ -1,0 +1,46 @@
+CREATE TABLE User(
+	UId INT NOT NULL,
+	Fname VARCHAR(15) NOT NULL,
+	Lname VARCHAR(30) NOT NULL,
+	PRIMARY KEY(UId)
+	);
+
+CREATE TABLE Session(
+	UId INT NOT NULL,
+	SessionId INT NOT NULL,
+	STime INT,
+	PRIMARY KEY(UId, SessionId)
+	);
+
+CREATE TABLE Frame(
+	UId INT NOT NULL,
+	SessionId INT NOT NULL,
+	FrameNo INT NOT NULL,
+	FPerSec FLOAT,
+	HandCount INT,
+	PRIMARY KEY(UId, SessionId, FrameNo)
+	);
+
+CREATE TABLE Hand(
+	UId INT NOT NULL,
+	SessionId INT NOT NULL,
+	FrameNo INT NOT NULL,
+	HandNo INT NOT NULL,
+	LeftHand VARCHAR(5),
+	Confidence FLOAT,
+	FingerCount INT,
+	PRIMARY KEY(UId, SessionId, FrameNo, HandNo)
+	);
+
+CREATE TABLE Finger(
+	UId INT NOT NULL,
+	SessionId INT NOT NULL,
+	FrameNo INT NOT NULL,
+	HandNo INT NOT NULL,
+	FingerNo INT NOT NULL,
+	TipX FLOAT,
+	TipY FLOAT,
+	TipZ FLOAT,
+	PRIMARY KEY(UId, SessionId, FrameNo, HandNo, FingerNo)
+	);
+
