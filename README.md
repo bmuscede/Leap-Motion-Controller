@@ -24,6 +24,7 @@ $ java -cp bin;lib/LeapJava.jar;lib/sqlite-jdbc-3.8.7.jar ProgramController
 ```
 
 To build the Unity visualizer:
+
 1. Run Unity 4.0
 2. In the *Project Wizard Dialog* select *Open Other...*
 3. Navigate to the *LeapMotionVisualizer* directory.
