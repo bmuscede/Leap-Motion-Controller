@@ -1,0 +1,12 @@
+# Leap Motion Tracker
+.metadata/
+*.class
+.classpath
+.project
+bin/
+.settings
+
+#Unity Program
+LeapMotionTracker/Visualizer
+
+
