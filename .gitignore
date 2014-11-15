@@ -4,7 +4,7 @@
 .classpath
 .project
 bin/
-.settings
+.settings/
 
 #Unity Program
 LeapMotionTracker/Visualizer
