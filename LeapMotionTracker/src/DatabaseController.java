@@ -6,6 +6,7 @@ import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
 
 public class DatabaseController {
+	private final String DATABASE_PREFIX = "jdbc:sqlite:";
 	private Connection conn;
 	private int frameID;
 	private Vector<String> statementBuffer;
@@ -26,7 +27,7 @@ public class DatabaseController {
 			Class.forName("org.sqlite.JDBC");
 			
 			//Now connects to the database.
-			conn = DriverManager.getConnection(dbURL);	
+			conn = DriverManager.getConnection(DATABASE_PREFIX + dbURL);	
 			
 			//Sets a 0 frame ID.
 			frameID = 0;
@@ -145,6 +146,50 @@ public class DatabaseController {
 		return true;
 	}
 
+	/**
+	 * Runs a retrieval SQL statement on the database.
+	 * @param sql The SQL statement to run.
+	 * @return A vector of a vector containing the data.
+	 */
+	public Vector<Vector<String>> getData(String sql){
+		//Creates a vector for the results.
+		Vector<Vector<String>> results = new Vector<Vector<String>>();
+		
+		try {
+			//Creates a statement object and executes the query.
+			Statement queryStatement = conn.createStatement();
+			ResultSet rs = queryStatement.executeQuery(sql);
+			
+			//Gets the number of columns.
+			ResultSetMetaData rsmd = rs.getMetaData();
+			int columns = rsmd.getColumnCount();
+			
+			//Gets each of the column names.
+			Vector<String> catalogNames = new Vector<String>();
+			for (int i = 1; i <= columns; i++){
+				catalogNames.add(rsmd.getColumnLabel(i));
+			}
+			results.add(catalogNames);
+			
+			//Loops through the results and displays the data.
+			while(rs.next()){
+				//Loops through and saves the columns into a vector.
+				Vector<String> row = new Vector<String>();
+				for (int i = 1; i <= columns; i++){
+					row.add(rs.getString(i));
+				}
+				
+				//Now adds the row vector into the results vector.
+				results.add(row);
+			}
+		} catch (SQLException e) {
+			return null;
+		}
+		
+		//Returns the result set.
+		return results;
+	}
+	
 	/**
 	 * Gets the next available session number for a user.
 	 * @param userID The user ID for the lookup.

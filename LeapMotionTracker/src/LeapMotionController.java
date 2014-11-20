@@ -21,7 +21,7 @@ public class LeapMotionController extends Thread{
 	
 	//Database controller
 	DatabaseController dbControl; 
-	private final String DB_NAME = "/data.db";
+	private final String DB_NAME = "data/data.db";
 	private final String DEFAULT_USER = "1";
 	private String currentSession;
 	

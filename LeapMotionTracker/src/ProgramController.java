@@ -5,6 +5,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Dictionary;
+import java.util.Vector;
 
 import javax.swing.JOptionPane;
 
@@ -12,15 +13,24 @@ import com.leapmotion.leap.Finger;
 import com.leapmotion.leap.Hand;
 
 public class ProgramController {
+	//GUI Objects
 	static StatusWindow status;
 	static HandDataWindow handLeft;
 	static HandDataWindow handRight;
 	static StatusBoxWindow vizStatus;
+	static UserWindow userList;
 	
+	//Leap Motion Objects
 	static LeapMotionController controller;
 	static ProcessCommunicator messageSender;
+	
+	//Visualizer Variables
 	static boolean visualizerFailure; 
 	static Process visualizerProcess;
+	
+	//Database Communicator.
+	static DatabaseController database;
+	private static final String DB_URL = "data/data.db";
 	
 	//GUI Variables.
 	public static final int START_BAR_HEIGHT = 48;
@@ -44,6 +54,10 @@ public class ProgramController {
 		//Provides full program functionality.
 		visualizerFailure = false;
 		
+		//Creates the database function.
+		database = new DatabaseController(DB_URL);
+		
+		//Starts the GUI
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {					
@@ -51,6 +65,7 @@ public class ProgramController {
 					status = new StatusWindow();
 					handLeft = new HandDataWindow(true);
 					handRight = new HandDataWindow(false);
+					userList = new UserWindow();
 					
 					//Positions the windows accordingly.
 			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
@@ -60,65 +75,12 @@ public class ProgramController {
 			        		(int) dim.getHeight() - handRight.getHeight() - START_BAR_HEIGHT);
 			        
 					//Shows each of the windows.
-					status.setVisible(true);
-					handLeft.setVisible(true);
-					handRight.setVisible(true);
-					
-					//Finally, builds the leap motion controller.
-					controller = new LeapMotionController();
-					controller.start();
-					
-					//Starts the visualizer maximized.
-					String workingDir = System.getProperty("user.dir");
-					try{
-						visualizerProcess = new ProcessBuilder(
-								workingDir + "/Visualizer/Visualizer.exe").start();
-						
-						//If that works, create the shutdown hook.
-						Runtime.getRuntime().addShutdownHook(new Thread(){
-							public void run(){
-								//Kills the visualizer when the program terminates.
-								ProgramController.visualizerProcess.destroy();
-								
-								//Kills the controller.
-								controller.destroyController();
-							}
-						});
-					} catch (IOException e){
-						//The program had trouble executing. Likely doesn't exist!
-						visualizerFailure = true;
-						createDialog("<html>The program \'Visualizer.exe\' could not be " +
-								"found on your system!<br>The program will now continue " +
-								"but in limited mode.</html>", 
-								"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-					}
+					userList.setVisible(true);
+			        //status.setVisible(true);
+					//handLeft.setVisible(true);
+					//handRight.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
-				}
-				
-				//Initializes communication between the visualizer and this program
-				if (!visualizerFailure){
-					//We create a new process communicator.
-					try{
-						messageSender = new ProcessCommunicator();
-					} catch (Exception e){
-						e.printStackTrace();
-						//Making the communicator failed. We assume visualizer failure.
-						visualizerFailure = true;
-						createDialog("<html>Something went wrong with \'Visualizer.exe\'." +
-								"<br>Please check your system settings.<br>The program will continue " +
-								"but in limited mode.</html>", 
-								"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-					}
-				}
-				
-				//Finally, adds a dialog indicating the visualizer is not ready.
-				if (!visualizerFailure){
-					//Creates a message box telling the user to be patient.
-					vizStatus = 
-							new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
-									"Please be patient.</center></html>");
-					vizStatus.setVisible(true);
 				}
 			}
 		});
@@ -289,5 +251,21 @@ public class ProgramController {
 			default:
 				return;
 		}
+	}
+	
+	public static Vector<Vector<String>> getDatabaseUsers(){
+		//Creates the SQL statement.
+		String sql = "SELECT User.UserName, User.FName, User.LName, COUNT(Session.UserName)" +
+				" FROM User LEFT JOIN Session ON (User.UserName = Session.UserName)" +
+				" GROUP BY User.UserName;";
+		
+		//Runs the statement.
+		Vector<Vector<String>> userData = database.getData(sql);
+		
+		if (userData == null){
+			//TODO: Implement something wrong code.
+		}
+		
+		return userData;
 	}
 }
