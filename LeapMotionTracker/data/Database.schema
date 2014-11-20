@@ -16,6 +16,6 @@ CREATE TABLE Frame(
 	UserName VARCHAR(15) NOT NULL,
 	SessionId INT NOT NULL,
 	FrameNo INT NOT NULL,
-	FrameSerial VARCHAR(100),
+	FrameSerial BLOB,
 	PRIMARY KEY(UserName, SessionId, FrameNo)
 	);

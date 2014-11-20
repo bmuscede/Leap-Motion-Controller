@@ -32,6 +32,9 @@ public class ProgramController {
 	static DatabaseController database;
 	private static final String DB_URL = "data/data.db";
 	
+	//Session Variables.
+	static String currentUser;
+	
 	//GUI Variables.
 	public static final int START_BAR_HEIGHT = 48;
 	
@@ -73,12 +76,11 @@ public class ProgramController {
 			        handLeft.setLocation(0, (int) dim.getHeight() - handLeft.getHeight() - START_BAR_HEIGHT);
 			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
 			        		(int) dim.getHeight() - handRight.getHeight() - START_BAR_HEIGHT);
+			        userList.setLocationRelativeTo(null);
 			        
-					//Shows each of the windows.
+					//Shows the user list window.
 					userList.setVisible(true);
-			        //status.setVisible(true);
-					//handLeft.setVisible(true);
-					//handRight.setVisible(true);
+
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -267,5 +269,84 @@ public class ProgramController {
 		}
 		
 		return userData;
+	}
+
+	public static boolean addNewUser(String userName, String firstName, String lastName) {
+		String sql = "INSERT INTO User VALUES(\"" + userName + "\", \"" + firstName + "\", \"" + lastName
+				+ "\");";
+		
+		//Runs the statement.
+		return database.writeSQLStatement(sql);
+	}
+	
+	public static boolean deleteUser(String userName) {
+		String sql = "DELETE FROM User WHERE UserName = \"" + userName + "\";";
+	
+		//Runs the statement.
+		return database.writeSQLStatement(sql);
+	}
+	
+	public static void startMainProgram(String userName) {
+		//Gets the current user.
+		currentUser = userName;
+		
+		//Shows the next windows.
+        status.setVisible(true);
+		handLeft.setVisible(true);
+		handRight.setVisible(true);
+		userList.setVisible(false);
+		
+		//Builds the leap motion controller.
+		controller = new LeapMotionController(database, currentUser);
+		controller.start();
+
+		//Starts the visualizer maximized.
+		String workingDir = System.getProperty("user.dir");
+		try{
+			visualizerProcess = new ProcessBuilder(
+					workingDir + "/Visualizer/Visualizer.exe").start();
+			
+			//If that works, create the shutdown hook.
+			Runtime.getRuntime().addShutdownHook(new Thread(){
+				public void run(){
+					//Kills the visualizer when the program terminates.
+					ProgramController.visualizerProcess.destroy();
+					
+					//Kills the controller.
+					controller.destroyController();
+				}
+			});
+		} catch (IOException e){
+			//The program had trouble executing. Likely doesn't exist!
+			visualizerFailure = true;
+			createDialog("<html>The program \'Visualizer.exe\' could not be " +
+					"found on your system!<br>The program will now continue " +
+					"but in limited mode.</html>", 
+					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+		}
+		//Initializes communication between the visualizer and this program
+		if (!visualizerFailure){
+			//We create a new process communicator.
+			try{
+				messageSender = new ProcessCommunicator();
+			} catch (Exception e){
+				e.printStackTrace();
+				//Making the communicator failed. We assume visualizer failure.
+				visualizerFailure = true;
+				createDialog("<html>Something went wrong with \'Visualizer.exe\'." +
+						"<br>Please check your system settings.<br>The program will continue " +
+						"but in limited mode.</html>", 
+						"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+			}
+		}
+		
+		//Finally, adds a dialog indicating the visualizer is not ready.
+		if (!visualizerFailure){
+			//Creates a message box telling the user to be patient.
+			vizStatus = 
+					new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
+							"Please be patient.</center></html>");
+			vizStatus.setVisible(true);
+		}
 	}
 }

@@ -9,7 +9,6 @@ public class DatabaseController {
 	private final String DATABASE_PREFIX = "jdbc:sqlite:";
 	private Connection conn;
 	private int frameID;
-	private Vector<String> statementBuffer;
 	
 	//The default session id.
 	private final String DEFAULT_SESSION = "0";
@@ -20,8 +19,6 @@ public class DatabaseController {
 	 * @param dbURL The location (path of the sqlite database)
 	 */
 	public DatabaseController(String dbURL) {
-		statementBuffer = new Vector<String>();
-		
 		try{
 			//Registers the SQLite3 driver.
 			Class.forName("org.sqlite.JDBC");
@@ -43,8 +40,8 @@ public class DatabaseController {
 	 * @return A boolean indicating success or failure.
 	 */
 	public boolean writeSession(String userID, String sessionNo){
-		String sessionStatement = "INSERT INTO Session VALUES(" +
-				userID + ", " + sessionNo + ", 0);";
+		String sessionStatement = "INSERT INTO Session VALUES(\"" +
+				userID + "\", " + sessionNo + ", 0);";
 		
 		//Now writes it into the db.
 		try {
@@ -66,64 +63,30 @@ public class DatabaseController {
 	 * @param session The session ID for the current session of the user working.
 	 * @param currentFrame The frame to be written.
 	 */
-	public void writeFrame(String userID, String session, Frame currentFrame){
+	public boolean writeFrame(String userID, String session, byte[] frameData){
 		//First, generates an SQL statement for the user and frame.
-		String frameStatement = "INSERT INTO Frame VALUES(";
+		String frameStatement = "INSERT INTO Frame VALUES(?, ?, ?, ?);";
 		
-		//Now generates some of the main values for the frame.
-		frameStatement += userID + ", " + session + ", " + frameID + ", " + 
-				currentFrame.currentFramesPerSecond() + ", " + currentFrame.hands().count() + ");";
-		
-		//For each of the hands, creates new hand data.
-		for (int i = 0; i < currentFrame.hands().count(); i++){
-			Hand currentHand = currentFrame.hand(i);
+		//Now converts it into an SQLite statement.
+		PreparedStatement statement = null;
+		try {
+			//Builds the statement.
+			statement = conn.prepareStatement(frameStatement);
+			statement.setString(1, userID);
+			statement.setString(2, session);
+			statement.setString(3, Integer.toString(frameID));
+			statement.setBytes(4, frameData);
 			
-			//Creates the initial statement for the hand.
-			String handStatement = "INSERT INTO Hand VALUES(" + userID + ", " + session + ", " + frameID +
-					", " + i + ", \"" + currentHand.isLeft() + "\", " + currentHand.confidence() + ", " +
-					currentHand.fingers().count() + ");";
-			
-			//Now, creates new finger data for each of the fingers.
-			for (int j = 0; j < currentHand.fingers().count(); j++){
-				Finger currentFinger = currentHand.finger(j);
-				
-				//Creates the initial statement for the finger.
-				String fingerStatement = "INSERT INTO Finger VALUES(" + userID + ", " + session + ", " + frameID +
-						", " + i + ", " + j + ", " + currentFinger.tipPosition().getX() + ", " + 
-						currentFinger.tipPosition().getY() + ", " + currentFinger.tipPosition().getZ() + ");";
-				
-				//Now, adds it to the statement buffer.
-				statementBuffer.add(fingerStatement);
-			}
-			
-			//Now, writes that in the database.
-			statementBuffer.add(handStatement);
+			//Executes and commits the statement.
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return false;
 		}
-		
-		//Next, we execute the SQL statement.
-		statementBuffer.add(frameStatement);
 		
 		//Since there was no error, return true.
 		frameID++;
-	}
-	
-	public boolean flushFrames(){
-		//We start by looping through the vector.
-		for(int i = 0; i < statementBuffer.size(); i++){
-			//Get the current string out of the buffer and write to db.
-			String currStatement = statementBuffer.get(i);
-			
-			try {
-				Statement query = conn.createStatement();
-				query.executeUpdate(currStatement);
-			} catch (SQLException e) {
-				e.printStackTrace();
-				return false;
-			}
-		}
 		
-		//Clears the entire buffer.
-		statementBuffer.removeAllElements();
 		return true;
 	}
 	
@@ -196,7 +159,7 @@ public class DatabaseController {
 	 * @return The next available session number for that user.
 	 */
 	public String getNextSession(String userID) {
-		String sqlStatement = "SELECT MAX(SessionID) + 1 FROM Session WHERE UId = " + userID;
+		String sqlStatement = "SELECT MAX(SessionID) + 1 FROM Session WHERE UserName = \"" + userID + "\";";
 	
 		ResultSet rs;
 		String session;
@@ -228,8 +191,8 @@ public class DatabaseController {
 	 */
 	public boolean updateSessionTime(String userID, String sessionID, int time) {
 		//Creates the sql statement.
-		String sql = "UPDATE Session SET STime = " + time + " WHERE UId = " + userID +
-				" AND SessionId = " + sessionID + ";";
+		String sql = "UPDATE Session SET STime = " + time + " WHERE UserName = \"" + userID +
+				"\" AND SessionId = " + sessionID + ";";
 		
 		//Executes the generated SQL statement.
 		try {

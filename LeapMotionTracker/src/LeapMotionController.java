@@ -20,9 +20,8 @@ public class LeapMotionController extends Thread{
 	MainListener leapListener;
 	
 	//Database controller
-	DatabaseController dbControl; 
-	private final String DB_NAME = "data/data.db";
-	private final String DEFAULT_USER = "1";
+	private DatabaseController database;
+	private String currentUser;
 	private String currentSession;
 	
 	//Output time for data smoothening.
@@ -31,14 +30,15 @@ public class LeapMotionController extends Thread{
  	/**
 	 * Constructor for the leap motion controller class.
 	 */
-	public LeapMotionController(){
+	public LeapMotionController(DatabaseController db, String currentUser){
+		//Copies the database object.
+		database = db;
+		this.currentUser = currentUser;
+		
 		//Sets collection to paused.
 		collecting = false;
 		ready = false;
 		paused = false;
-		
-		//Starts the database controller.
-		dbControl = new DatabaseController("jdbc:sqlite:" + System.getProperty("user.dir") + DB_NAME);
 	}
 	
 	/**
@@ -82,8 +82,8 @@ public class LeapMotionController extends Thread{
 		//Ensures a valid collection status has been passed to the Leap Motion.
 		if (ready && collectionStatus){
 			//We create a new session for this collection.
-			currentSession = dbControl.getNextSession(DEFAULT_USER);
-			dbControl.writeSession(DEFAULT_USER, currentSession);
+			currentSession = database.getNextSession(currentUser);
+			database.writeSession(currentUser, currentSession);
 			
 			//We now allow for collection.
 			collecting = collectionStatus;
@@ -92,12 +92,7 @@ public class LeapMotionController extends Thread{
 			paused = false;
 			
 			//Closes the session id.
-			if (!dbControl.flushFrames()){
-				//There was a problem writing frames to the database.
-				ProgramController.createDialog("There was a problem writing frames to the database.", 
-					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-			}
-			dbControl.updateSessionTime(DEFAULT_USER, currentSession, ProgramController.status.timerValue);
+			database.updateSessionTime(currentUser, currentSession, ProgramController.status.timerValue);
 		}
 	}
 	
@@ -107,12 +102,6 @@ public class LeapMotionController extends Thread{
 		if (ready && collecting){
 			//Flushes the buffer on pause.
 			paused = pauseStatus;
-			
-			if (!dbControl.flushFrames()){
-				//There was a problem writing frames to the database.
-				ProgramController.createDialog("There was a problem writing frames to the database.", 
-					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-			}
 		}
 	}
 
@@ -166,7 +155,7 @@ public class LeapMotionController extends Thread{
 		 */
 		private void saveFrame(Frame currentFrame) {
 			//We call the database controller to handle this.
-			dbControl.writeFrame(DEFAULT_USER, currentSession, currentFrame);
+			database.writeFrame(currentUser, currentSession, currentFrame.serialize());
 		}
 
 		private void updateStatusMessage(Frame currentFrame) {
