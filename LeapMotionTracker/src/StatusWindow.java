@@ -32,6 +32,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 	//Variables to keep track of state.
 	public boolean start;
 	public boolean paused;
+	private JLabel lblProfile;
 	
 	/**
 	 * Create the frame.
@@ -45,7 +46,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 		setResizable(false);
 		setAlwaysOnTop(true);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 439, 177);
+		setBounds(100, 100, 439, 188);
 		pnlStatusContent = new JPanel();
 		pnlStatusContent.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(pnlStatusContent);
@@ -78,6 +79,12 @@ public class StatusWindow extends JFrame implements ActionListener {
 		btnPause.setBounds(241, 114, 100, 23);
 		btnPause.addActionListener(this);
 		pnlStatusContent.add(btnPause);
+		
+		lblProfile = new JLabel("Profile: <NAME>");
+		lblProfile.setFont(new Font("Tahoma", Font.PLAIN, 13));
+		lblProfile.setHorizontalAlignment(SwingConstants.CENTER);
+		lblProfile.setBounds(10, 141, 414, 14);
+		pnlStatusContent.add(lblProfile);
 	}
 
 	public void actionPerformed(ActionEvent event) {
@@ -162,6 +169,10 @@ public class StatusWindow extends JFrame implements ActionListener {
     			    timerValue % TimeUnit.MINUTES.toSeconds(1));
         	lblTime.setText(value);
         }
+	}
+
+	public void setUser(String currentUser) {
+		lblProfile.setText("Profile: " + currentUser);
 	}
 }
 

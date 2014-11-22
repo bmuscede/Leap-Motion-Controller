@@ -19,6 +19,7 @@ public class ProgramController {
 	static HandDataWindow handRight;
 	static StatusBoxWindow vizStatus;
 	static UserWindow userList;
+	static SavingWindow progBar;
 	
 	//Leap Motion Objects
 	static LeapMotionController controller;
@@ -292,6 +293,7 @@ public class ProgramController {
 		
 		//Shows the next windows.
         status.setVisible(true);
+        status.setUser(currentUser);
 		handLeft.setVisible(true);
 		handRight.setVisible(true);
 		userList.setVisible(false);
@@ -348,5 +350,37 @@ public class ProgramController {
 							"Please be patient.</center></html>");
 			vizStatus.setVisible(true);
 		}
+	}
+
+	public static void createProgressBar(final int low, final int high) {
+		//Starts the GUI
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {					
+					//Creates the new progress bar window.
+					progBar = new SavingWindow(low, high);
+					
+					//Positions the windows accordingly.
+			        progBar.setLocationRelativeTo(null);
+			        
+					//Shows the user list window.
+					progBar.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		
+		//Disable the start button.
+		status.btnStartStop.setEnabled(false);
+	}
+	
+	public static void updateProgressBar(int newLow) {
+		//Check that there is actually an instance.
+		if (progBar == null){
+			return;
+		}
+		
+		progBar.updateValue(newLow);
 	}
 }

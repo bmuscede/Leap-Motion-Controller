@@ -87,12 +87,19 @@ public class LeapMotionController extends Thread{
 			
 			//We now allow for collection.
 			collecting = collectionStatus;
+			
+			//Start the database thread.
+			database.start();
 		} else if (!collectionStatus){
 			collecting = collectionStatus;
 			paused = false;
 			
 			//Closes the session id.
 			database.updateSessionTime(currentUser, currentSession, ProgramController.status.timerValue);
+			
+			//Creates the new dialog.
+			int[] values = database.stoppedCollecting();
+			ProgramController.createProgressBar(values[0], values[1]);
 		}
 	}
 	

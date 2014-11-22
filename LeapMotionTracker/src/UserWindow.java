@@ -1,12 +1,7 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JList;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollBar;
 import javax.swing.JTable;
 import javax.swing.JButton;
 import javax.swing.JSeparator;
@@ -24,11 +19,13 @@ import javax.swing.JScrollPane;
 
 public class UserWindow extends JFrame implements ActionListener {
 
+	private static final long serialVersionUID = -1218373856456167662L;
 	private JPanel contentPane;
 	private JTable tlbUsers;
 	private JButton btnDelete;
-	private JButton btnSignIn;
+	private JButton btnRecord;
 	private JButton btnNew;
+	private JButton btnPlayback;
 	private JLabel lblNoUsers;
 	
 	/**
@@ -81,16 +78,38 @@ public class UserWindow extends JFrame implements ActionListener {
 		tlbUsers.getColumnModel().getColumn(1).setResizable(false);
 		tlbUsers.getColumnModel().getColumn(2).setResizable(false);
 		tlbUsers.getColumnModel().getColumn(2).setPreferredWidth(35);
+		tlbUsers.addMouseListener(new java.awt.event.MouseAdapter() {
+		    @Override
+		    public void mouseClicked(java.awt.event.MouseEvent evt) {
+		        //Gets the row clicked.
+		    	int row = tlbUsers.rowAtPoint(evt.getPoint());
+		    	if (row < 0) return;
+		    	
+		    	//Enables the buttons.
+		    	btnRecord.setEnabled(true);
+		    	btnDelete.setEnabled(true);
+		    	
+		    	//Enables playback ONLY if there are sessions.
+		    	if (Integer.parseInt((String) tlbUsers.getModel().getValueAt(row, 2)) > 0)
+		    		btnPlayback.setEnabled(true);
+		    	else
+		    		btnPlayback.setEnabled(false);
+		    }
+		});
 		
-		btnSignIn = new JButton("Sign In...");
-		btnSignIn.setBounds(346, 50, 131, 23);
-		btnSignIn.addActionListener(this);
-		contentPane.add(btnSignIn);
+		btnRecord = new JButton("Start Program...");
+		btnRecord.setBounds(343, 46, 131, 23);
+		btnRecord.addActionListener(this);
+		contentPane.add(btnRecord);
 		
 		btnNew = new JButton("New User...");
 		btnNew.setBounds(346, 162, 131, 23);
 		btnNew.addActionListener(this);
 		contentPane.add(btnNew);
+		
+		btnPlayback = new JButton("Data Playback...");
+		btnPlayback.setBounds(343, 82, 131, 23);
+		contentPane.add(btnPlayback);
 		
 		btnDelete = new JButton("Delete User");
 		btnDelete.setBounds(346, 199, 131, 23);
@@ -119,7 +138,7 @@ public class UserWindow extends JFrame implements ActionListener {
 	
 	public void actionPerformed(ActionEvent event) {
 		//Finds the appropriate action.
-		if (event.getSource().equals(btnSignIn)){
+		if (event.getSource().equals(btnRecord)){
 			loginHandler();
 		} else if (event.getSource().equals(btnNew)){
 			createNewUser();
@@ -201,8 +220,19 @@ public class UserWindow extends JFrame implements ActionListener {
 										   currentUser.elementAt(1) + " " + currentUser.elementAt(2), 
 										   currentUser.elementAt(3)});
 		}
+		
+		disableButtons();
 	}
 
+	private void disableButtons(){
+		//Checks to see if a row is selected.
+		if (tlbUsers.getSelectedRow() < 0){
+			btnDelete.setEnabled(false);
+			btnPlayback.setEnabled(false);
+			btnRecord.setEnabled(false);
+		}
+	}
+	
 	private void loginHandler() {
 		//First, we check to see if an item in the list box is selected at all.
 		int rowIndex = tlbUsers.getSelectedRow();

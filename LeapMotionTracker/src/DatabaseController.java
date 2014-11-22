@@ -1,16 +1,20 @@
 import java.sql.*;
 import java.util.Vector;
 
-import com.leapmotion.leap.Finger;
-import com.leapmotion.leap.Frame;
-import com.leapmotion.leap.Hand;
-
-public class DatabaseController {
+public class DatabaseController extends Thread {
 	private final String DATABASE_PREFIX = "jdbc:sqlite:";
 	private Connection conn;
-	private int frameID;
+	private int frameID; //The id of the frame currently written.
+	private int frameAddedID; //The id of the last frame added to buff.
 	
-	//The default session id.
+	//Threading methods
+	private Thread dbThread;
+	private volatile Vector<byte[]> frameBuffer;
+	private volatile Vector<String> userIDBuffer;
+	private volatile Vector<String> sessionBuffer;
+	private volatile boolean stpCol;
+	
+ 	//The default session id.
 	private final String DEFAULT_SESSION = "0";
 	
 	/**
@@ -28,9 +32,94 @@ public class DatabaseController {
 			
 			//Sets a 0 frame ID.
 			frameID = 0;
+			frameAddedID = 0;
+			
+			//Sets up the buffers.
+			frameBuffer = new Vector<byte[]>();
+			userIDBuffer = new Vector<String>();
+			sessionBuffer = new Vector<String>();
+			stpCol = false;
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Sets up the database controller so that it 
+	 * continually writes to the database. This is
+	 * done so long as there are items in the database.
+	 */
+	public void run() {
+		while(true){
+			//We see if there are frames to write.
+			if (frameBuffer.size() > 0){
+				//First, generates an SQL statement for the user and frame.
+				String frameStatement = "INSERT INTO Frame VALUES(?, ?, ?, ?);";
+				
+				//Now converts it into an SQLite statement.
+				PreparedStatement statement = null;
+				try {
+					//Builds the statement.
+					statement = conn.prepareStatement(frameStatement);
+					statement.setString(1, userIDBuffer.get(0));
+					statement.setString(2, sessionBuffer.get(0));
+					statement.setString(3, Integer.toString(frameID));
+					statement.setBytes(4, frameBuffer.get(0));
+					
+					//Adds the frame to a buffer.
+					statement.executeUpdate();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				
+				//Remove the frame.
+				userIDBuffer.remove(0);
+				sessionBuffer.remove(0);
+				frameBuffer.remove(0);
+				
+				//Increment the frame ID.
+				frameID++;
+				
+				if (stpCol){
+					//Reports it to the GUI
+					ProgramController.updateProgressBar(frameID);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Invokes the run method by forking to a new thread.
+	 * This can be used to invoke a new Leap Motion
+	 * listener. 
+	 */
+	public void start(){
+		//Checks to see if start hasn't already been invoked.
+		if (dbThread == null){
+			//Creates a new thread and starts it.
+			dbThread = new Thread(this);
+			dbThread.start();
+		} else {
+			if (frameBuffer.size() == 0){
+				//Flush the buffer.
+				stpCol = false;
+				frameBuffer.clear();
+				dbThread = new Thread(this);
+				dbThread.start();
+			}
+		}
+	}
+	
+	public int[] stoppedCollecting() {
+		//Gets the high and low end of the values.
+		int[] values = new int[2];
+		values[0] = frameID;
+		values[1] = frameAddedID;
+		
+		//Notifies that things have stopped.
+		stpCol = true;
+		
+		return values;
 	}
 	
 	/**
@@ -64,28 +153,10 @@ public class DatabaseController {
 	 * @param currentFrame The frame to be written.
 	 */
 	public boolean writeFrame(String userID, String session, byte[] frameData){
-		//First, generates an SQL statement for the user and frame.
-		String frameStatement = "INSERT INTO Frame VALUES(?, ?, ?, ?);";
-		
-		//Now converts it into an SQLite statement.
-		PreparedStatement statement = null;
-		try {
-			//Builds the statement.
-			statement = conn.prepareStatement(frameStatement);
-			statement.setString(1, userID);
-			statement.setString(2, session);
-			statement.setString(3, Integer.toString(frameID));
-			statement.setBytes(4, frameData);
-			
-			//Executes and commits the statement.
-			statement.executeUpdate();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		}
-		
-		//Since there was no error, return true.
-		frameID++;
+		frameBuffer.add(frameData);
+		userIDBuffer.add(userID);
+		sessionBuffer.add(session);
+		frameAddedID++;
 		
 		return true;
 	}
