@@ -109,6 +109,7 @@ public class UserWindow extends JFrame implements ActionListener {
 		
 		btnPlayback = new JButton("Data Playback...");
 		btnPlayback.setBounds(343, 82, 131, 23);
+		btnPlayback.addActionListener(this);
 		contentPane.add(btnPlayback);
 		
 		btnDelete = new JButton("Delete User");
@@ -140,11 +141,24 @@ public class UserWindow extends JFrame implements ActionListener {
 		//Finds the appropriate action.
 		if (event.getSource().equals(btnRecord)){
 			loginHandler();
+		} else if (event.getSource().equals(btnPlayback)){
+			playbackHandler();
 		} else if (event.getSource().equals(btnNew)){
 			createNewUser();
 		} else if (event.getSource().equals(btnDelete)){
 			deleteSelectedUser();
 		}
+	}
+
+	private void playbackHandler() {
+		//First, we get the selected user.
+		int selectedRow = tlbUsers.getSelectedRow();
+		if (selectedRow < 0) return;
+		
+		//Now we get data about that user.
+		String userName = (String) tlbUsers.getModel().getValueAt(selectedRow, 0);
+		
+		ProgramController.runPlaybackView(userName);
 	}
 
 	private void deleteSelectedUser() {
@@ -242,6 +256,6 @@ public class UserWindow extends JFrame implements ActionListener {
 		String userName = (String) tlbUsers.getModel().getValueAt(rowIndex, 0);
 		
 		//Finally starts the visualizer.
-		ProgramController.startMainProgram(userName);
+		ProgramController.runProcedureView(userName);
 	}
 }

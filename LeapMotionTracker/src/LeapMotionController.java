@@ -1,3 +1,7 @@
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import javax.swing.JOptionPane;
 
 import com.leapmotion.leap.*;
@@ -95,7 +99,10 @@ public class LeapMotionController extends Thread{
 			paused = false;
 			
 			//Closes the session id.
-			database.updateSessionTime(currentUser, currentSession, ProgramController.status.timerValue);
+			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+			Date date = new Date();
+			database.updateSessionTime(currentUser, currentSession, 
+					ProcedureController.status.timerValue, dateFormat.format(date));
 			
 			//Creates the new dialog.
 			int[] values = database.stoppedCollecting();
@@ -118,7 +125,7 @@ public class LeapMotionController extends Thread{
 		 */
 		public void onConnect(Controller leapController) {
 			//We want to send a message back to the main controller.
-			ProgramController.leapStatus(ProgramController.CONNECTED);
+			ProcedureController.leapStatus(ProcedureController.CONNECTED);
 			ready = true;
 			
 			//Sets the output times to -1.
@@ -131,7 +138,7 @@ public class LeapMotionController extends Thread{
 		 */
 		public void onDisconnect(Controller leapController) {
 			//We want to send a message back to the main controller.
-			ProgramController.leapStatus(ProgramController.NOT_CONNECTED);
+			ProcedureController.leapStatus(ProcedureController.NOT_CONNECTED);
 			ready = false;
 			collecting = false;
 			paused = false;
@@ -166,22 +173,26 @@ public class LeapMotionController extends Thread{
 		}
 
 		private void updateStatusMessage(Frame currentFrame) {
-			if (ready && collecting && paused){
+			if (database.isSaving()){
+				//System is saving.
+				ProcedureController.leapStatus(ProcedureController.SAVING);
+			}
+			else if (ready && collecting && paused){
 				//System is paused.
-				ProgramController.leapStatus(ProgramController.PAUSED);
+				ProcedureController.leapStatus(ProcedureController.PAUSED);
 			} else if (ready && collecting && !paused){
 				//System is collecting.
-				ProgramController.leapStatus(ProgramController.COLLECTING);
+				ProcedureController.leapStatus(ProcedureController.COLLECTING);
 			} else  if (!checkHandStatus(currentFrame.hands()) && ready){
 				//System is ready but not collecting.
-				ProgramController.leapStatus(ProgramController.CONNECTED);
+				ProcedureController.leapStatus(ProcedureController.CONNECTED);
 				return;
 			} else if (ready) {
 				//Hands are present.
-				ProgramController.leapStatus(ProgramController.HANDS_PRESENT);
+				ProcedureController.leapStatus(ProcedureController.HANDS_PRESENT);
 			} else if (!ready){
 				//System has gone offline.
-				ProgramController.leapStatus(ProgramController.NOT_CONNECTED);
+				ProcedureController.leapStatus(ProcedureController.NOT_CONNECTED);
 			}
 		}
 
@@ -213,7 +224,7 @@ public class LeapMotionController extends Thread{
 					}
 					
 					String handData = generateHandData(currentHand);
-					ProgramController.sendHandData(ProgramController.HAND_LEFT,
+					ProcedureController.sendHandData(ProcedureController.HAND_LEFT,
 							handData, (int) (currentHand.confidence() * 100));
 				} else {
 					//A right hand is detected.
@@ -226,7 +237,7 @@ public class LeapMotionController extends Thread{
 					}
 					
 					String handData = generateHandData(currentHand);
-					ProgramController.sendHandData(ProgramController.HAND_RIGHT,
+					ProcedureController.sendHandData(ProcedureController.HAND_RIGHT,
 							handData, (int) (currentHand.confidence() * 100));
 				}
 			}
@@ -234,11 +245,11 @@ public class LeapMotionController extends Thread{
 			//Sees if hand data was sent for left and right.
 			if (!leftSet){
 				leftOutputTime = -1;
-				ProgramController.sendHandData(ProgramController.HAND_LEFT, null, 0);
+				ProcedureController.sendHandData(ProcedureController.HAND_LEFT, null, 0);
 			}
 			if (!rightSet){
 				rightOutputTime = -1;
-				ProgramController.sendHandData(ProgramController.HAND_RIGHT, null, 0);
+				ProcedureController.sendHandData(ProcedureController.HAND_RIGHT, null, 0);
 			}
 		}
 

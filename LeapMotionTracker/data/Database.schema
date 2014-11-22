@@ -9,6 +9,7 @@ CREATE TABLE Session(
 	UserName VARCHAR(15) NOT NULL,
 	SessionId INT NOT NULL,
 	STime INT,
+	SDate VARCHAR(50),
 	PRIMARY KEY(UserName, SessionId)
 	);
 

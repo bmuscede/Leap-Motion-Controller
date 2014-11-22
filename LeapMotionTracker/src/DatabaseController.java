@@ -83,6 +83,16 @@ public class DatabaseController extends Thread {
 				if (stpCol){
 					//Reports it to the GUI
 					ProgramController.updateProgressBar(frameID);
+					
+					//Sees if we're done.
+					if (frameID == frameAddedID){
+						//Says we're done.
+						stpCol = false;
+						
+						//Updates the GUI.
+						ProgramController.closeProgressBar();
+						break;
+					}
 				}
 			}
 		}
@@ -100,9 +110,12 @@ public class DatabaseController extends Thread {
 			dbThread = new Thread(this);
 			dbThread.start();
 		} else {
-			if (frameBuffer.size() == 0){
+			if (!stpCol){
+				//Sets a 0 frame ID.
+				frameID = 0;
+				frameAddedID = 0;
+				
 				//Flush the buffer.
-				stpCol = false;
 				frameBuffer.clear();
 				dbThread = new Thread(this);
 				dbThread.start();
@@ -130,7 +143,7 @@ public class DatabaseController extends Thread {
 	 */
 	public boolean writeSession(String userID, String sessionNo){
 		String sessionStatement = "INSERT INTO Session VALUES(\"" +
-				userID + "\", " + sessionNo + ", 0);";
+				userID + "\", " + sessionNo + ", 0, 0);";
 		
 		//Now writes it into the db.
 		try {
@@ -258,11 +271,13 @@ public class DatabaseController extends Thread {
 	 * @param userID The user ID of the session.
 	 * @param sessionID The session ID for the session.
 	 * @param time The time of the procedure.
+	 * @param string 
 	 * @return A boolean indicating success or failure.
 	 */
-	public boolean updateSessionTime(String userID, String sessionID, int time) {
+	public boolean updateSessionTime(String userID, String sessionID, int time, String date) {
 		//Creates the sql statement.
-		String sql = "UPDATE Session SET STime = " + time + " WHERE UserName = \"" + userID +
+		String sql = "UPDATE Session SET STime = " + time + ",SDate = \"" + date + "\" " +
+				"WHERE UserName = \"" + userID +
 				"\" AND SessionId = " + sessionID + ";";
 		
 		//Executes the generated SQL statement.
@@ -276,5 +291,9 @@ public class DatabaseController extends Thread {
 		
 		//If there is no error, returns true.
 		return true;
+	}
+
+	public boolean isSaving() {
+		return stpCol;
 	}
 }

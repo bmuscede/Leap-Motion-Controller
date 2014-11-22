@@ -105,7 +105,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 			programTimer.cancel();
 			
 			//Sends message to controller.
-			ProgramController.sendMessage(ProgramController.PAUSED);
+			ProcedureController.sendMessage(ProcedureController.PAUSED);
 		} else {
 			//Sets program state.
 			paused = false;
@@ -116,7 +116,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 			programTimer.schedule(new Tick(), 1000, 1000);
 			
 			//Sends message to controller.
-			ProgramController.sendMessage(ProgramController.COLLECTING);
+			ProcedureController.sendMessage(ProcedureController.COLLECTING);
 		}
 	}
 
@@ -133,7 +133,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 			programTimer.schedule(new Tick(), 1000, 1000);
 			
 			//Sends message to controller.
-			ProgramController.sendMessage(ProgramController.COLLECTING);
+			ProcedureController.sendMessage(ProcedureController.COLLECTING);
 		} else {
 			//Sets state accordingly.
 			start = false;
@@ -148,7 +148,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 			lblTime.setText("00:00:00");
 			
 			//Sends message to controller.
-			ProgramController.sendMessage(ProgramController.NOT_COLLECTING);
+			ProcedureController.sendMessage(ProcedureController.NOT_COLLECTING);
 		}
 	}
 	

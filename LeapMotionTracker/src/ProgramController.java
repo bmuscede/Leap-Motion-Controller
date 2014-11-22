@@ -14,69 +14,36 @@ import com.leapmotion.leap.Hand;
 
 public class ProgramController {
 	//GUI Objects
-	static StatusWindow status;
-	static HandDataWindow handLeft;
-	static HandDataWindow handRight;
-	static StatusBoxWindow vizStatus;
 	static UserWindow userList;
 	static SavingWindow progBar;
-	
-	//Leap Motion Objects
-	static LeapMotionController controller;
-	static ProcessCommunicator messageSender;
-	
-	//Visualizer Variables
-	static boolean visualizerFailure; 
-	static Process visualizerProcess;
 	
 	//Database Communicator.
 	static DatabaseController database;
 	private static final String DB_URL = "data/data.db";
 	
-	//Session Variables.
-	static String currentUser;
-	
-	//GUI Variables.
-	public static final int START_BAR_HEIGHT = 48;
-	
-	//Collection status codes.
-	public static final int CONNECTED = 1;
-	public static final int NOT_CONNECTED = 0;
-	public static final int HANDS_PRESENT = 2;
-	public static final int PAUSED = 3;
-	public static final int COLLECTING = 4;
-	public static final int NOT_COLLECTING = 5;
+	//Indicators of programs running.
+	static boolean procedureView;
+	static boolean playbackView;
 	
 	//IPC Codes
 	public static final int VISUALIZER_READY = 1;
 	
-	//Hand Codes.
-	public static final int HAND_LEFT = 0;
-	public static final int HAND_RIGHT = 1;
-	
 	public static void main(String[] args) {
-		//Provides full program functionality.
-		visualizerFailure = false;
-		
 		//Creates the database function.
 		database = new DatabaseController(DB_URL);
+		
+		//No programs are running.
+		playbackView = false;
+		procedureView = false;
 		
 		//Starts the GUI
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {					
-					//Creates each of the new windows.
-					status = new StatusWindow();
-					handLeft = new HandDataWindow(true);
-					handRight = new HandDataWindow(false);
+					//Creates the user list window.
 					userList = new UserWindow();
 					
-					//Positions the windows accordingly.
-			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-			        status.setLocation(0, 0);
-			        handLeft.setLocation(0, (int) dim.getHeight() - handLeft.getHeight() - START_BAR_HEIGHT);
-			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
-			        		(int) dim.getHeight() - handRight.getHeight() - START_BAR_HEIGHT);
+					//Positions the window accordingly.
 			        userList.setLocationRelativeTo(null);
 			        
 					//Shows the user list window.
@@ -89,124 +56,34 @@ public class ProgramController {
 		});
 	}
 	
-	public static void leapStatus(int statusCode){
-		//Acts on the model based on the Leap Controller.
-		switch (statusCode) {
-			case CONNECTED:
-				//Sets the status of the status bar.
-				status.lblStatus.setText("Status: Connected (Ready)");
-				
-				//Enables the start button.
-				status.btnStartStop.setEnabled(true);
-				break;
-				
-			case NOT_CONNECTED:
-				//Sets the status of the status bar.
-				status.lblStatus.setText("Status: Not Connected");
-				
-				//Disables everything from working.
-				status.btnStartStop.setEnabled(false);
-				status.sendStopMessage();
-				handLeft.lblErrorSymbol.setVisible(true);
-				handLeft.lblHandNotPresent.setVisible(true);
-				handRight.lblErrorSymbol.setVisible(true);
-				handRight.lblHandNotPresent.setVisible(true);
-				break;
-				
-			case HANDS_PRESENT:
-				//Sets the status of the status bar.
-				status.lblStatus.setText("Status: Hands Present (Ready)");
-				
-				//Enables the start button.
-				status.btnStartStop.setEnabled(true);
-				break;
-				
-			case COLLECTING:
-				//Sets the status of the status bar.
-				status.lblStatus.setText("Status: Collecting Data");
-				break;
-			
-			case PAUSED:
-				//Sets the status of the status bar.
-				status.lblStatus.setText("Status: Paused Data Collection");
-				break;
-				
-			default:
-				break;
-		}
-	}
-
-	public static void sendMessage(int statusCode) {
-		//Changes the state in the LeapMotion thread.
-		switch(statusCode){
-			case COLLECTING:
-				controller.setCollection(true);
-				controller.setPaused(false);
-				break;
-				
-			case NOT_COLLECTING:
-				controller.setCollection(false);
-				controller.setPaused(false);
-				break;
-				
-			case PAUSED:
-				//Sets paused to be true.
-				controller.setPaused(true);
-				break;
-		}
-	}
-
 	/**
-	 * Sends messages to the GUI about position data.
-	 * If there is no hand data from the controller, it sends NULL.
-	 * @param handCode The left or right hand for the data.
-	 * @param handData The data of that hand. Null means no data available. 
-	 * @param f 
+	 * Runs the playback view.
+	 * @param userName The user name of the view.
 	 */
-	public static void sendHandData(int handCode, String handData, int confidence) {
-		//Sees if data is available for the frame.
-		if (handData == null){
-			//Checks which hand has no data.
-			if (handCode == HAND_LEFT){
-				//Adds no hand available.
-				handLeft.lblErrorSymbol.setVisible(true);
-				handLeft.lblHandNotPresent.setVisible(true);
-				handLeft.lblData.setVisible(false);
-				handLeft.lblConfidence.setVisible(false);
-				handLeft.sepConfidenceSep.setVisible(false);
-			} else {
-				//Adds no hand available.
-				handRight.lblErrorSymbol.setVisible(true);
-				handRight.lblHandNotPresent.setVisible(true);
-				handRight.lblData.setVisible(false);
-				handRight.lblConfidence.setVisible(false);
-				handRight.sepConfidenceSep.setVisible(false);
-			}
-			
-			//We're done now.
-			return;
-		}
+	public static void runPlaybackView(String userName) {
+		//First, alerts that it's a playback view.
+		playbackView = true;
 		
-		//Now, checks which hand we're on.
-		if (handCode == HAND_LEFT){
-			//Adds data
-			handLeft.lblErrorSymbol.setVisible(false);
-			handLeft.lblHandNotPresent.setVisible(false);
-			handLeft.lblData.setVisible(true);
-			handLeft.lblData.setText(handData);
-			handLeft.lblConfidence.setVisible(true);
-			handLeft.sepConfidenceSep.setVisible(true);
-			handLeft.updateConfidence(confidence);
-		} else {
-			//Adds no hand available.
-			handRight.lblErrorSymbol.setVisible(false);
-			handRight.lblHandNotPresent.setVisible(false);
-			handRight.lblData.setVisible(true);
-			handRight.lblData.setText(handData);
-			handRight.lblConfidence.setVisible(true);
-			handRight.sepConfidenceSep.setVisible(true);
-			handRight.updateConfidence(confidence);
-		}
+		//Hides the user list.
+		userList.setVisible(false);
+		
+		//Starts playback view
+		PlaybackController.startPlaybackProgram(userName, database);
+	}
+	
+	/**
+	 * Runs when the user selects for the
+	 * procedure view to be run.
+	 */
+	public static void runProcedureView(String user){
+		//First, alerts that it's a procedure view.
+		procedureView = true;
+		
+		//Hides the user list.
+		userList.setVisible(false);
+		
+		//Activates the Procedure controller.
+		ProcedureController.startProcedureProgram(user, database);
 	}
 	
 	/**
@@ -231,7 +108,7 @@ public class ProgramController {
 	 */
 	public static void messageReceived(String message) {
 		//Checks for a valid message.
-		if (message.length() < 3 || visualizerFailure == true){
+		if (message.length() < 3){
 			return;
 		}
 		
@@ -244,18 +121,14 @@ public class ProgramController {
 			return;
 		}
 
-		//Now parses the message.
-		switch(code){
-			case VISUALIZER_READY:
-				//The visualizer is ready.
-				vizStatus.setVisible(false);
-				break;
-				
-			default:
-				return;
-		}
+		if (procedureView) ProcedureController.receiveMessage(code);
+		if (playbackView); //TODO: IMPLEMENT!
 	}
 	
+	/**
+	 * Retrieves all database users 
+	 * @return A vector containing all the database records.
+	 */
 	public static Vector<Vector<String>> getDatabaseUsers(){
 		//Creates the SQL statement.
 		String sql = "SELECT User.UserName, User.FName, User.LName, COUNT(Session.UserName)" +
@@ -272,6 +145,13 @@ public class ProgramController {
 		return userData;
 	}
 
+	/**
+	 * Creates a new user and adds it to the database.
+	 * @param userName The new username. Must be unique.
+	 * @param firstName The first name of the user.
+	 * @param lastName The last name of the user.
+	 * @return Success code.
+	 */
 	public static boolean addNewUser(String userName, String firstName, String lastName) {
 		String sql = "INSERT INTO User VALUES(\"" + userName + "\", \"" + firstName + "\", \"" + lastName
 				+ "\");";
@@ -287,71 +167,6 @@ public class ProgramController {
 		return database.writeSQLStatement(sql);
 	}
 	
-	public static void startMainProgram(String userName) {
-		//Gets the current user.
-		currentUser = userName;
-		
-		//Shows the next windows.
-        status.setVisible(true);
-        status.setUser(currentUser);
-		handLeft.setVisible(true);
-		handRight.setVisible(true);
-		userList.setVisible(false);
-		
-		//Builds the leap motion controller.
-		controller = new LeapMotionController(database, currentUser);
-		controller.start();
-
-		//Starts the visualizer maximized.
-		String workingDir = System.getProperty("user.dir");
-		try{
-			visualizerProcess = new ProcessBuilder(
-					workingDir + "/Visualizer/Visualizer.exe").start();
-			
-			//If that works, create the shutdown hook.
-			Runtime.getRuntime().addShutdownHook(new Thread(){
-				public void run(){
-					//Kills the visualizer when the program terminates.
-					ProgramController.visualizerProcess.destroy();
-					
-					//Kills the controller.
-					controller.destroyController();
-				}
-			});
-		} catch (IOException e){
-			//The program had trouble executing. Likely doesn't exist!
-			visualizerFailure = true;
-			createDialog("<html>The program \'Visualizer.exe\' could not be " +
-					"found on your system!<br>The program will now continue " +
-					"but in limited mode.</html>", 
-					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-		}
-		//Initializes communication between the visualizer and this program
-		if (!visualizerFailure){
-			//We create a new process communicator.
-			try{
-				messageSender = new ProcessCommunicator();
-			} catch (Exception e){
-				e.printStackTrace();
-				//Making the communicator failed. We assume visualizer failure.
-				visualizerFailure = true;
-				createDialog("<html>Something went wrong with \'Visualizer.exe\'." +
-						"<br>Please check your system settings.<br>The program will continue " +
-						"but in limited mode.</html>", 
-						"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-			}
-		}
-		
-		//Finally, adds a dialog indicating the visualizer is not ready.
-		if (!visualizerFailure){
-			//Creates a message box telling the user to be patient.
-			vizStatus = 
-					new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
-							"Please be patient.</center></html>");
-			vizStatus.setVisible(true);
-		}
-	}
-
 	public static void createProgressBar(final int low, final int high) {
 		//Starts the GUI
 		EventQueue.invokeLater(new Runnable() {
@@ -370,9 +185,6 @@ public class ProgramController {
 				}
 			}
 		});
-		
-		//Disable the start button.
-		status.btnStartStop.setEnabled(false);
 	}
 	
 	public static void updateProgressBar(int newLow) {
@@ -382,5 +194,16 @@ public class ProgramController {
 		}
 		
 		progBar.updateValue(newLow);
+	}
+
+	public static void closeProgressBar() {
+		//Destroys the progress bar.
+		progBar.setVisible(false);
+		progBar = null;
+	}
+	
+	public static Vector<Vector<String>> getSessions(String userName) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
