@@ -25,8 +25,13 @@ public class ProgramController {
 	static boolean procedureView;
 	static boolean playbackView;
 	
-	//IPC Codes
+	//GUI Variables.
+	public static final int START_BAR_HEIGHT = 48;
+	
+	//IPC
+	public static ProcessCommunicator messageSender;
 	public static final int VISUALIZER_READY = 1;
+	public static final int VISUALIZER_PLAYBACK = 2;
 	
 	public static void main(String[] args) {
 		//Creates the database function.
@@ -54,6 +59,20 @@ public class ProgramController {
 				}
 			}
 		});
+		
+		//We create a new process communicator.
+		try{
+			messageSender = new ProcessCommunicator();
+		} catch (Exception e){
+			e.printStackTrace();
+			//The communicator failed for some reason.
+			//TODO: MAKE THIS BETTER
+			ProgramController.createDialog("<html>There was a problem starting the process communicator." +
+					"<br>Please check your network settings or contact your system administrator.<br>" +
+					"The program will now terminate.</html>", 
+					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
 	}
 	
 	/**
@@ -122,7 +141,7 @@ public class ProgramController {
 		}
 
 		if (procedureView) ProcedureController.receiveMessage(code);
-		if (playbackView); //TODO: IMPLEMENT!
+		if (playbackView) PlaybackController.receiveMessage(code);
 	}
 	
 	/**

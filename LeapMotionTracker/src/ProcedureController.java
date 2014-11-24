@@ -24,9 +24,6 @@ public class ProcedureController {
 	//Session Variables.
 	static String currentUser;
 	
-	//GUI Variables.
-	public static final int START_BAR_HEIGHT = 48;
-	
 	//Collection status codes.
 	public static final int CONNECTED = 1;
 	public static final int NOT_CONNECTED = 0;
@@ -63,9 +60,10 @@ public class ProcedureController {
 					//Positions the windows accordingly.
 			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 			        status.setLocation(0, 0);
-			        handLeft.setLocation(0, (int) dim.getHeight() - handLeft.getHeight() - START_BAR_HEIGHT);
+			        handLeft.setLocation(0, 
+			        		(int) dim.getHeight() - handLeft.getHeight() - ProgramController.START_BAR_HEIGHT);
 			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
-			        		(int) dim.getHeight() - handRight.getHeight() - START_BAR_HEIGHT);
+			        		(int) dim.getHeight() - handRight.getHeight() - ProgramController.START_BAR_HEIGHT);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -107,22 +105,7 @@ public class ProcedureController {
 							"but in limited mode.</html>", 
 							"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
 				}
-				//Initializes communication between the visualizer and this program
-				if (!visualizerFailure){
-					//We create a new process communicator.
-					try{
-						messageSender = new ProcessCommunicator();
-					} catch (Exception e){
-						e.printStackTrace();
-						//Making the communicator failed. We assume visualizer failure.
-						visualizerFailure = true;
-						ProgramController.createDialog("<html>Something went wrong with \'Visualizer.exe\'." +
-								"<br>Please check your system settings.<br>The program will continue " +
-								"but in limited mode.</html>", 
-								"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
-					}
-				}
-				
+								
 				//Finally, adds a dialog indicating the visualizer is not ready.
 				if (!visualizerFailure){
 					//Creates a message box telling the user to be patient.
@@ -130,6 +113,7 @@ public class ProcedureController {
 							new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
 									"Please be patient.</center></html>");
 					vizStatus.setVisible(true);
+					vizStatus.setLocationRelativeTo(null);
 				}
 			}
 		});

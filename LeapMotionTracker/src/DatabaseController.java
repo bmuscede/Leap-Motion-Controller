@@ -296,4 +296,34 @@ public class DatabaseController extends Thread {
 	public boolean isSaving() {
 		return stpCol;
 	}
+
+	public Vector<byte[]> getFrames(String currentUser, String session) {
+		//Creates a vector to hold all serialized bytes.
+		Vector<byte[]> bytes = new Vector<byte[]>();
+		
+		//Creates the statement.
+		String sql = "SELECT FrameSerial FROM Frame WHERE UserName = \"" + currentUser + "\" " +
+				"AND SessionId = " + session + " ORDER BY FrameNo ASC";
+		
+		Statement stm=null;
+        try{
+        	//Executes the statement.
+            stm = conn.createStatement();
+            ResultSet result = stm.executeQuery(sql);
+		
+            //Loops through the result set.
+            while (result.next()){
+            	bytes.add(result.getBytes("FrameSerial"));
+            }
+            
+            //Closes the result set.
+            result.close();
+        } catch (SQLException e) {
+        	e.printStackTrace();
+        	return null;
+        }
+        
+		//Finally, returns the bytes.
+		return bytes;
+	}
 }

@@ -71,7 +71,14 @@ public class SessionWindow extends JFrame implements ActionListener {
 			new String[] {
 				"Session ID", "Session Date", "Session Length (HH:MM:SS)"
 			}
-		));
+		) {
+			boolean[] columnEditables = new boolean[] {
+				false, false, false
+			};
+			public boolean isCellEditable(int row, int column) {
+				return columnEditables[column];
+			}
+		});
 		tlbSessions.getColumnModel().getColumn(0).setPreferredWidth(37);
 		tlbSessions.addMouseListener(new java.awt.event.MouseAdapter() {
 		    @Override
@@ -151,7 +158,15 @@ public class SessionWindow extends JFrame implements ActionListener {
 	}
 
 	private void playHandler() {
+		//First, we get the selected session.
+		int selectedRow = tlbSessions.getSelectedRow();
+		if (selectedRow < 0) return;
 		
+		//Now we get data about that user.
+		String session = (String) tlbSessions.getModel().getValueAt(selectedRow, 0);
+		
+		//Now, we start the playback.
+		PlaybackController.startPlayback(session);
 	}
 
 	private void deleteSelectedSession() {
