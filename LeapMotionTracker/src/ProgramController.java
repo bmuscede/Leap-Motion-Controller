@@ -30,8 +30,9 @@ public class ProgramController {
 	
 	//IPC
 	public static ProcessCommunicator messageSender;
-	public static final int VISUALIZER_READY = 1;
-	public static final int VISUALIZER_PLAYBACK = 2;
+	public static final int VISUALIZER_READY = 001; //Message that the visualizer is ready.
+	public static final String S_VISUALIZER_PLAYBACK = "002"; //Sent to the visualizer for playback.
+	public static final int VISUALIZER_PLAYBACK = 003; //Playback ack received from visualizer.
 	
 	public static void main(String[] args) {
 		//Creates the database function.

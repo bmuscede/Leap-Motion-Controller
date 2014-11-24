@@ -79,6 +79,7 @@ public class ProcessCommunicator extends Thread{
 			OutputStream messageSendStream = sendingManager.getOutputStream();
 			
 			//Next, using our output stream, we just send our message.
+			message = message + "\n";
 			messageSendStream.write(message.getBytes());
 		} catch (UnknownHostException e) {
 			//Something went wrong here.

@@ -5,7 +5,7 @@
 	<Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
 	<ProductVersion>10.0.20506</ProductVersion>
 	<SchemaVersion>2.0</SchemaVersion>
-	<ProjectGuid>{54569453-CC4F-7A56-1472-47FC1EFE071E}</ProjectGuid>
+	<ProjectGuid>{DF10ACD1-314F-9A0B-B4E1-61022799F864}</ProjectGuid>
 	<OutputType>Library</OutputType>
 	<AppDesignerFolder>Properties</AppDesignerFolder>
 	<RootNamespace></RootNamespace>
@@ -86,7 +86,7 @@
      <Compile Include="Assets\LeapMotion\Scripts\Utils\LeapRecorder.cs" />
      <Compile Include="Assets\LeapMotion\Scripts\Utils\LeapUnityExtensions.cs" />
      <Compile Include="Assets\LeapMotion\Scripts\Utils\MagneticPinch.cs" />
-     <Compile Include="Assets\Scripts\PlaybackController.cs" />
+     <Compile Include="Assets\Scripts\Loom.cs" />
      <Compile Include="Assets\Scripts\ProcessMessenger.cs" />
      <Compile Include="Assets\Scripts\WindowHandler.cs" />
      <None Include="Assets\LeapMotion\Materials\Sources\Shaders\Toony-Basic.shader" />
@@ -99,7 +99,7 @@
      <None Include="Assets\LeapMotion\Shaders\LeapDistorted.shader" />
      <None Include="Assets\LeapMotion\Shaders\LeapUndistorted.shader" />
  <Reference Include="LeapCSharp.NET3.5">
- <HintPath>C:/Users/Bryan/SkyDrive/School Work/Computer Science 4490Z/Leap Motion Visualizer/Assets/Plugins/LeapCSharp.NET3.5.dll</HintPath>
+ <HintPath>C:/Users/Bryan/SkyDrive/School Work/Computer Science 4490Z/Leap Motion Projects/LeapMotionVisualizer/Assets/Plugins/LeapCSharp.NET3.5.dll</HintPath>
  </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -60,8 +60,8 @@ public class PlaybackController {
 		switch(code){
 			case ProgramController.VISUALIZER_READY:
 				//We need to send a "playback message back".
-				status.changeMessage(PlaybackStatusWindow.READY);
-				status.readForPlayback();
+				ProgramController.messageSender.sendMessage(
+						ProgramController.S_VISUALIZER_PLAYBACK);
 				break;
 			
 			case ProgramController.VISUALIZER_PLAYBACK:
@@ -144,7 +144,7 @@ public class PlaybackController {
 							visualizerProcess.destroy();
 						}
 					});
-				} catch (IOException e){
+				} catch (Exception e){
 					//The program had trouble executing. Likely doesn't exist!
 					ProgramController.createDialog("<html>The program \'Visualizer.exe\' could not be " +
 							"found on your system!<br>The program will now exit.", 
