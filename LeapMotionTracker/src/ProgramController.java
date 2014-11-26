@@ -140,7 +140,7 @@ public class ProgramController {
 			//There is something wrong with the message.
 			return;
 		}
-
+		
 		if (procedureView) ProcedureController.receiveMessage(code);
 		if (playbackView) PlaybackController.receiveMessage(code);
 	}

@@ -10,7 +10,11 @@ using Leap;
 
 // Overall Controller object that will instantiate hands and tools when they appear.
 public class HandController : MonoBehaviour {
-
+  // Variables for frame playback.
+  private bool playback = false;
+  private List<byte[]> playback_frames;
+  private int current_frame_ptr = 0;
+  
   // Reference distance from thumb base to pinky base in mm.
   protected const float GIZMO_SCALE = 5.0f;
   protected const float MM_TO_M = 0.001f;
@@ -229,6 +233,23 @@ public class HandController : MonoBehaviour {
   Frame GetFrame() {
     if (enableRecordPlayback && recorder_.state == RecorderState.Playing)
       return recorder_.GetCurrentFrame();
+    
+    // Performs playback specific stuff.
+    if (playback == true) {
+	  //Sees if a frame is available.
+ 	  if (playback_frames.Count == current_frame_ptr)
+	  	return null;
+	 
+	  //Gets the currently available frame.
+	  Frame currentFrame = new Frame ();
+	  currentFrame.Deserialize (playback_frames [current_frame_ptr]);
+   
+	  //Increments the pointer.
+	  current_frame_ptr++;
+
+	  //Returns the new frame.
+	  return currentFrame;
+	}
 
     return leap_controller_.Frame();
   }
@@ -239,6 +260,9 @@ public class HandController : MonoBehaviour {
     
     UpdateRecorder();
     Frame frame = GetFrame();
+    if (frame == null)
+		return;
+
     UpdateHandModels(hand_graphics_, frame.Hands, leftGraphicsModel, rightGraphicsModel);
   }
 
@@ -247,6 +271,9 @@ public class HandController : MonoBehaviour {
       return;
 
     Frame frame = GetFrame();
+	if (frame == null)
+		return;
+
     UpdateHandModels(hand_physics_, frame.Hands, leftPhysicsModel, rightPhysicsModel);
     UpdateToolModels(tools_, frame.Tools, toolModel);
   }
@@ -323,5 +350,15 @@ public class HandController : MonoBehaviour {
     else {
       recorder_.NextFrame();
     }
+  }
+  
+  public void NotifyPlayback(){
+    //Gets playback ready.
+	playback = true;
+    playback_frames = new List<byte[]> (); 
+  }
+
+  public void SendFrame(byte[] bytes){
+    playback_frames.Add (bytes);
   }
 }

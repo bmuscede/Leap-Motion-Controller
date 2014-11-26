@@ -87,7 +87,7 @@ public class FramePlayback extends Thread{
 		//First, we output the frame data.
 		
 		//We send it to the visualizer.
-		
+		ProgramController.messageSender.sendFrame(current.serialize());
 	}
 
 	public void play(){

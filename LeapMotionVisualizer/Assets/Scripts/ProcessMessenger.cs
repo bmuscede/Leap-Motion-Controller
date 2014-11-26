@@ -5,7 +5,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
 public class ProcessMessenger : MonoBehaviour {
 	private const string LOCAL_HOST = "127.0.0.1"; //The address of the local host.
@@ -19,16 +20,25 @@ public class ProcessMessenger : MonoBehaviour {
 
 	//Indicator codes.
 	private bool playback_mode;
+	private bool playback_send_coordinates;
 
 	//GameObjects
 	GameObject handController;
-	GameObject playbackController;
+	HandController hcScript;
+
+	//Playback Objects.
+	Queue<byte[]> frameBuffer = new Queue<byte[]>();
 
 	// Use this for initialization
 	void Start () {
 		//First, gets objects running in the program
 		handController = GameObject.Find ("HandController");
-		
+		hcScript = (HandController)handController.GetComponent (typeof(HandController));
+
+		//Sets up the booleans
+		playback_mode = false;
+		playback_send_coordinates = false;
+
 		//Now creates a new client socket thread.
 		sendMessage (STARTUP_CODE);
 
@@ -80,12 +90,21 @@ public class ProcessMessenger : MonoBehaviour {
 			try{
 				//Gets the stream and reads from it.
 				NetworkStream networkStream = connectingSocket.GetStream();
-				StreamReader reader = new StreamReader(networkStream);
-				string message = reader.ReadLine();
 
-				//Looks at the message that was received.
-				Debug.Log (message);
-				receivedMessage(message);
+				if (playback_send_coordinates == false){
+				  StreamReader reader = new StreamReader(networkStream);
+				  string message = reader.ReadLine();
+
+				  //Looks at the message that was received.
+				  receivedMessage(message);
+			    } else {
+				  byte[] frameSerial = ReadStream(networkStream);
+
+				  //Locks the variable.
+				  lock(frameBuffer){
+				    frameBuffer.Enqueue(frameSerial);
+				  }
+			    }
 			} catch (Exception ex){
 				//There was a problem parsing the message.
 			}
@@ -94,11 +113,40 @@ public class ProcessMessenger : MonoBehaviour {
 			connectingSocket.Close();
 		}
 	}
-	
+
+	private byte[] ReadStream(NetworkStream ns){
+		List<byte> bl = new List<byte>();
+		byte[] receivedBytes = new byte[128];
+		while (true){
+			int bytesRead = ns.Read(receivedBytes, 0, receivedBytes.Length);
+			if (bytesRead == receivedBytes.Length){
+				bl.AddRange(receivedBytes);
+			} else {
+				bl.AddRange(receivedBytes.Take(bytesRead));
+				break;
+			}
+		}
+		return bl.ToArray();
+	}
+
 	// Update is called once per frame
 	void Update () {
 		if (playback_mode == true) {
-			Destroy (handController);
+			//Sets up the HandController to play back frames.
+			hcScript.NotifyPlayback();
+
+			//Sets the program for the next step.
+			playback_send_coordinates = true;
+			playback_mode = false;
+		}
+
+		if (playback_send_coordinates == true) {
+			//Locks the variable.
+			lock(frameBuffer){
+				if (frameBuffer.Count > 0){
+			      hcScript.SendFrame (frameBuffer.Dequeue());
+				}
+			}
 		}
 	}
 

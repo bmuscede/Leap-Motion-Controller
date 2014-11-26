@@ -63,7 +63,7 @@ public class ProcessCommunicator extends Thread{
 			}
 		}
 	}
-	
+
 	/**
 	 * Sends a message to the server. Accepts a string
 	 * message and passes it over. Either returns true
@@ -81,6 +81,33 @@ public class ProcessCommunicator extends Thread{
 			//Next, using our output stream, we just send our message.
 			message = message + "\n";
 			messageSendStream.write(message.getBytes());
+			
+			//Closes the socket.
+			sendingManager.close();
+		} catch (UnknownHostException e) {
+			//Something went wrong here.
+			e.printStackTrace();
+			return false;
+		} catch (IOException e) {
+			//There was a problem with the streams.
+			e.printStackTrace();
+			return false;
+		}
+	
+		return true;
+	}
+	
+	public boolean sendFrame(byte[] frame){
+		//First, we initialize our connection.
+		try {
+			//First, initializes a connection to the sever.
+			sendingManager = new Socket(InetAddress.getByName(null), DEFAULT_SEND_SOCKET);
+			OutputStream messageSendStream = sendingManager.getOutputStream();
+			
+			messageSendStream.write(frame);
+			
+			//Closes the socket.
+			sendingManager.close();
 		} catch (UnknownHostException e) {
 			//Something went wrong here.
 			e.printStackTrace();
@@ -93,6 +120,4 @@ public class ProcessCommunicator extends Thread{
 		
 		return true;
 	}
-	
-	
 }
