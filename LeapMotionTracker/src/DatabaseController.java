@@ -34,6 +34,14 @@ public class DatabaseController extends Thread {
 			frameID = 0;
 			frameAddedID = 0;
 			
+			//Creates the foreign key pragma.
+			try {
+				Statement query = conn.createStatement();
+				query.executeUpdate("PRAGMA foreign_keys = ON;");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			
 			//Sets up the buffers.
 			frameBuffer = new Vector<byte[]>();
 			userIDBuffer = new Vector<String>();

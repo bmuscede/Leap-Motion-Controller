@@ -6,11 +6,15 @@ CREATE TABLE User(
 	);
 
 CREATE TABLE Session(
-	UserName VARCHAR(15) NOT NULL,
+	UserName VARCHAR(15) NOT NULL, 
 	SessionId INT NOT NULL,
 	STime INT,
 	SDate VARCHAR(50),
-	PRIMARY KEY(UserName, SessionId)
+	PRIMARY KEY(UserName, SessionId),
+	FOREIGN KEY(UserName)
+		REFERENCES User(UserName)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE
 	);
 
 CREATE TABLE Frame(
@@ -18,5 +22,9 @@ CREATE TABLE Frame(
 	SessionId INT NOT NULL,
 	FrameNo INT NOT NULL,
 	FrameSerial BLOB,
-	PRIMARY KEY(UserName, SessionId, FrameNo)
+	PRIMARY KEY(UserName, SessionId, FrameNo),
+	FOREIGN KEY(UserName, SessionId)
+		REFERENCES Session(UserName, SessionId)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE
 	);
