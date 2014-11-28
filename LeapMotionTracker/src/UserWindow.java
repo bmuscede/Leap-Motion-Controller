@@ -34,7 +34,7 @@ public class UserWindow extends JFrame implements ActionListener {
 	 */
 	public UserWindow() {
 		setResizable(false);
-		setTitle("Leap Motion Controller - [Select User] ");
+		setTitle("Leap Motion Tracker - [Select User] ");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 490, 330);
 		contentPane = new JPanel();
@@ -177,7 +177,7 @@ public class UserWindow extends JFrame implements ActionListener {
 		
 		//Confirms the delete.
 	    int reply = JOptionPane.showConfirmDialog(null, "Are you sure you would like to delete the user " + userName + "?\n" +
-	    	    "ALL HAND MOTION DATA FOR THIS USER WILL BE LOST...", "Leap Motion Controller", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+	    	    "ALL HAND MOTION DATA FOR THIS USER WILL BE LOST...", "Leap Motion Tracker", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (reply != JOptionPane.YES_OPTION) {
         	return;
         }		
@@ -185,7 +185,7 @@ public class UserWindow extends JFrame implements ActionListener {
         //Now carries through with the delete.
         if (!ProgramController.deleteUser(userName)){
         	ProgramController.createDialog("<html>The username " + userName + " could not be removed!<br>Please try " +
-        			"again later.", "Leap Motion Controller", JOptionPane.ERROR_MESSAGE);
+        			"again later.", "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
         	return;
         }
         refreshTable();
@@ -208,13 +208,13 @@ public class UserWindow extends JFrame implements ActionListener {
 		if (!ProgramController.addNewUser(userName, firstName, lastName)){
 			//The unique constraint failed.
 			ProgramController.createDialog("<html>The username " + userName + " already exists!<br>Please try " +
-					"again with another username!", "Leap Motion Controller", JOptionPane.ERROR_MESSAGE);
+					"again with another username!", "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 		
 		//Otherwise, notify the user.
 		ProgramController.createDialog("<html>The user profile has successfully been created!<br>Username: " + userName,
-				"Leap Motion Controller", JOptionPane.INFORMATION_MESSAGE);
+				"Leap Motion Tracker", JOptionPane.INFORMATION_MESSAGE);
 		
 		//Finally, we refresh the menu.
 		refreshTable();
