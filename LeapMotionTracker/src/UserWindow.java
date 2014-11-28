@@ -15,6 +15,7 @@ import javax.swing.JCheckBox;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingConstants;
 
 
 public class UserWindow extends JFrame implements ActionListener {
@@ -35,7 +36,7 @@ public class UserWindow extends JFrame implements ActionListener {
 		setResizable(false);
 		setTitle("Leap Motion Controller - [Select User] ");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 490, 310);
+		setBounds(100, 100, 490, 330);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -122,15 +123,19 @@ public class UserWindow extends JFrame implements ActionListener {
 		contentPane.add(sepOptions);
 		
 		JLabel lblProgramOptions = new JLabel("Program Options:");
-		lblProgramOptions.setBounds(10, 255, 112, 14);
+		lblProgramOptions.setHorizontalAlignment(SwingConstants.LEFT);
+		lblProgramOptions.setFont(new Font("Tahoma", Font.PLAIN, 16));
+		lblProgramOptions.setBounds(10, 255, 147, 39);
 		contentPane.add(lblProgramOptions);
 		
 		JCheckBox chkLimited = new JCheckBox("Start Program in Limited Mode");
-		chkLimited.setBounds(103, 251, 169, 23);
+		chkLimited.setEnabled(false);
+		chkLimited.setBounds(157, 250, 322, 23);
 		contentPane.add(chkLimited);
 		
 		JCheckBox chkPermaSignIn = new JCheckBox("Always Sign in With Selected Profile");
-		chkPermaSignIn.setBounds(274, 251, 203, 23);
+		chkPermaSignIn.setEnabled(false);
+		chkPermaSignIn.setBounds(157, 275, 322, 23);
 		contentPane.add(chkPermaSignIn);
 		
 		//Refresh the menu.
