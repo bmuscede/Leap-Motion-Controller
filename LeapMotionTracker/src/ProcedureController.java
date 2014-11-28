@@ -56,6 +56,9 @@ public class ProcedureController {
 					status = new StatusWindow();
 					handLeft = new HandDataWindow(true);
 					handRight = new HandDataWindow(false);
+					vizStatus = 
+							new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
+									"Please wait.</center></html>");
 					
 					//Positions the windows accordingly.
 			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
@@ -64,6 +67,7 @@ public class ProcedureController {
 			        		(int) dim.getHeight() - handLeft.getHeight() - ProgramController.START_BAR_HEIGHT);
 			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
 			        		(int) dim.getHeight() - handRight.getHeight() - ProgramController.START_BAR_HEIGHT);
+			        vizStatus.setLocationRelativeTo(null);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -109,11 +113,7 @@ public class ProcedureController {
 				//Finally, adds a dialog indicating the visualizer is not ready.
 				if (!visualizerFailure){
 					//Creates a message box telling the user to be patient.
-					vizStatus = 
-							new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
-									"Please be patient.</center></html>");
 					vizStatus.setVisible(true);
-					vizStatus.setLocationRelativeTo(null);
 				}
 			}
 		});
