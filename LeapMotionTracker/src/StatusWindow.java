@@ -113,7 +113,7 @@ public class StatusWindow extends JFrame implements ActionListener {
 			programTimer.schedule(new Tick(), 1000, 1000);
 			
 			//Sends message to controller.
-			ProcedureController.sendMessage(ProcedureController.COLLECTING);
+			ProcedureController.sendMessage(ProcedureController.RESUME);
 		}
 	}
 

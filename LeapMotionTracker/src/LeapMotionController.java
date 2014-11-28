@@ -2,6 +2,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import javax.swing.JOptionPane;
+
 import com.leapmotion.leap.*;
 
 public class LeapMotionController extends Thread{
@@ -96,19 +98,24 @@ public class LeapMotionController extends Thread{
 			collecting = collectionStatus;
 			paused = false;
 			
-			//Closes the session id.
-			DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-			Date date = new Date();
-			database.updateSessionTime(currentUser, currentSession, 
-					ProcedureController.status.timerValue, dateFormat.format(date));
-			
-			//Creates the new dialog.
-			int[] values = database.stoppedCollecting();
-			ProgramController.createProgressBar(values[0], values[1]);
+			//Closes the session.
+			closeSession();
 		}
 	}
 	
-
+	private void closeSession(){
+		//Closes the session id.
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+		Date date = new Date();
+		database.updateSessionTime(currentUser, currentSession, 
+				ProcedureController.status.timerValue, dateFormat.format(date));
+		
+		//Creates the new dialog.
+		int[] values = database.stoppedCollecting();
+		if (values[0] == values[1]) return;
+		ProgramController.createProgressBar(values[0], values[1]);
+	}
+	
 	public void setPaused(boolean pauseStatus) {
 		//Only allows for pause status changes if system is collecting.
 		if (ready && collecting){
@@ -140,6 +147,12 @@ public class LeapMotionController extends Thread{
 			ready = false;
 			collecting = false;
 			paused = false;
+			
+			//Saves the session.
+			if (collecting)
+				ProgramController.createDialog("<html>The Leap Motion Controller has been disconnected " +
+					"from the computer.<br>Your current session has been saved.</html>", 
+					"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
 		}
 		
 		/**

@@ -32,6 +32,7 @@ public class ProcedureController {
 	public static final int COLLECTING = 4;
 	public static final int NOT_COLLECTING = 5;
 	public static final int SAVING = 6;
+	public static final int RESUME = 7;
 	
 	//Hand Codes.
 	public static final int HAND_LEFT = 0;
@@ -196,6 +197,11 @@ public class ProcedureController {
 			case PAUSED:
 				//Sets paused to be true.
 				controller.setPaused(true);
+				break;
+			
+			case RESUME:
+				//Resumes tracking.
+				controller.setPaused(false);
 				break;
 		}
 	}
