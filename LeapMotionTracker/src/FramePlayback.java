@@ -11,6 +11,11 @@ public class FramePlayback extends Thread{
 	private volatile boolean playData;
 	private Thread playThread;
 	
+	//For sending null frames
+	private final int STOP = 1;
+	private final int PAUSED = 2;
+	private final int PLAY = 3;
+	
 	public FramePlayback(Vector<byte[]> frameStream) {
 		frames = new Vector<Frame>();
 
@@ -60,30 +65,28 @@ public class FramePlayback extends Thread{
 			
 			Frame current = frames.elementAt(pos);
 			
-			//Calculates the sleep time until the next frame.
-			int sleepTime = (int) ((float) 1000 / current.currentFramesPerSecond());
-			
 			//Manages the frame
 			manageFrame(current);
-			
-			//Sleep for the specified time.
-			try {
-				Thread.sleep(sleepTime);
-			} catch (InterruptedException e) {
-				//Thread has been interrupted.
-				e.printStackTrace();
-			}
 			
 			pos++;
 		}
 		
+		//Sends null frame.
+		manageFrame(STOP);
+		
 		//We've finished.
-		PlaybackController.status.changeMessage(
-				PlaybackStatusWindow.READY);
-		PlaybackController.status.readForPlayback();
 		this.start();
 	}
 	
+	private void manageFrame(int type) {
+		byte[] nullFrame = new byte[type];
+		for (int i = 0; i < type; i++)
+			nullFrame[i] = 0;
+		
+		//We send null frame to visualizer.
+		ProgramController.messageSender.sendFrame(nullFrame);
+	}
+
 	private void manageFrame(Frame current) {
 		//First, we output the frame data.
 		
@@ -94,6 +97,8 @@ public class FramePlayback extends Thread{
 	public void play(){
 		//Simply set the play boolean.
 		playData = true;
+		
+		manageFrame(PLAY);
 	}
 	
 	public void stopPlayback(){
@@ -104,5 +109,8 @@ public class FramePlayback extends Thread{
 	public void pause(){
 		//Simply set the play boolean.
 		playData = false;
+		
+		//Sends a pause frame.
+		manageFrame(PAUSED);
 	}
 }

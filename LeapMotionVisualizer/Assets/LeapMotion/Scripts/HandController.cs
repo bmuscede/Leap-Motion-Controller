@@ -49,6 +49,14 @@ public class HandController : MonoBehaviour {
   Dictionary<int, HandModel> hand_physics_;
   Dictionary<int, ToolModel> tools_;
   
+  //Gets the messenger script.
+  GameObject processMessenger;
+  ProcessMessenger pmScript;
+
+  //For playback.
+  private bool stop_notified;
+  private bool paused;
+  
   void OnDrawGizmos() {
     // Draws the little Leap Motion Controller in the Editor view.
     Gizmos.matrix = Matrix4x4.Scale(GIZMO_SCALE * Vector3.one);
@@ -82,6 +90,11 @@ public class HandController : MonoBehaviour {
 
     if (enableRecordPlayback && recordingAsset != null)
       recorder_.Load(recordingAsset);
+	
+	//Sets up the controller.
+	processMessenger = GameObject.Find ("Process Messenger Object");
+	pmScript = (ProcessMessenger)processMessenger.GetComponent (typeof(ProcessMessenger));
+	stop_notified = false;
   }
 
   void IgnoreCollisions(GameObject first, GameObject second, bool ignore = true) {
@@ -237,13 +250,20 @@ public class HandController : MonoBehaviour {
     // Performs playback specific stuff.
     if (playback == true) {
 	  //Sees if a frame is available.
- 	  if (playback_frames.Count == current_frame_ptr)
-	  	return null;
-	 
+ 	  if (playback_frames.Count == current_frame_ptr || paused == true){
+		if (stop_notified){
+			pmScript.sendMessage(ProcessMessenger.STOP_CODE);
+			NotifyPlayback();
+		}
+
+		return null;
+	  }
+
 	  //Gets the currently available frame.
 	  Frame currentFrame = new Frame ();
 	  currentFrame.Deserialize (playback_frames [current_frame_ptr]);
-   
+	  stop_notified = false;
+
 	  //Increments the pointer.
 	  current_frame_ptr++;
 
@@ -355,7 +375,19 @@ public class HandController : MonoBehaviour {
   public void NotifyPlayback(){
     //Gets playback ready.
 	playback = true;
+	paused = false;
+	stop_notified = false;
+
+	current_frame_ptr = 0;
     playback_frames = new List<byte[]> (); 
+  }
+
+  public void NotifyStop(){
+	stop_notified = true;
+  }
+  
+  public void PausePlayback(bool type){
+    paused = type;
   }
 
   public void SendFrame(byte[] bytes){

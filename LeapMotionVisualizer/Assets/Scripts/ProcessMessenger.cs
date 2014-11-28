@@ -17,6 +17,7 @@ public class ProcessMessenger : MonoBehaviour {
 	private const string STARTUP_CODE = "001"; //The startup code sent to Java.
 	private const string PLAYBACK_MODE = "002"; //The playback mode code sent to Unity
 	private const string PLAYBACK_ACK = "003"; //The ack code for playback mode sent to Java.
+	public const string STOP_CODE = "004"; //The stop code for playback mode sent to Java.
 
 	//Indicator codes.
 	private bool playback_mode;
@@ -144,7 +145,21 @@ public class ProcessMessenger : MonoBehaviour {
 			//Locks the variable.
 			lock(frameBuffer){
 				if (frameBuffer.Count > 0){
-			      hcScript.SendFrame (frameBuffer.Dequeue());
+				  //Checks to see if null byte.
+				  byte[] current = frameBuffer.Dequeue();
+
+				  if (current.Length == 1 && current[0] == 0){
+						hcScript.NotifyStop();
+				  } else if (current.Length == 2 &&
+					           current[0] == 0 && current[1] == 0){
+						hcScript.PausePlayback(true);
+				  } else if (current.Length == 3 &&
+					           current[0] == 0 && current[1] == 0  &&
+					           current[2] == 0){
+						hcScript.PausePlayback(false);
+				  } else {
+			            hcScript.SendFrame (current);
+				  }
 				}
 			}
 		}

@@ -68,7 +68,11 @@ public class PlaybackController {
 				status.changeMessage(PlaybackStatusWindow.READY);
 				status.readForPlayback();
 				break;
-				
+			
+			case ProgramController.STOP_CODE:
+				//The visualizer has played through the frames.
+				status.changeMessage(PlaybackStatusWindow.READY);
+				status.readForPlayback();
 			default:
 				return;
 		}
