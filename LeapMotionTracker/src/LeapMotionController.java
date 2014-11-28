@@ -2,8 +2,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import javax.swing.JOptionPane;
-
 import com.leapmotion.leap.*;
 
 public class LeapMotionController extends Thread{

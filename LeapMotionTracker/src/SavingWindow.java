@@ -1,6 +1,3 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -9,11 +6,11 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingConstants;
 import javax.swing.JLabel;
 import java.awt.Font;
-import java.awt.Window.Type;
 
 
 public class SavingWindow extends JFrame {
-
+	private static final long serialVersionUID = 1472356562129423186L;
+	
 	private JPanel contentPane;
 	int highEnd;
 	private JProgressBar prgSaving;

@@ -3,6 +3,7 @@ import java.util.Vector;
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Frame;
 
+@SuppressWarnings("unused")
 public class FramePlayback extends Thread{
 	private Vector<Frame> frames;
 	private Controller leapController;

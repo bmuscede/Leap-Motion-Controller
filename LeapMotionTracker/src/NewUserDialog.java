@@ -8,7 +8,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.Font;
-import java.awt.Dialog.ModalExclusionType;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.SwingConstants;
@@ -16,7 +15,8 @@ import java.awt.Color;
 
 
 public class NewUserDialog extends JDialog implements ActionListener {
-
+	private static final long serialVersionUID = -3685836927877338571L;
+	
 	private final JPanel contentPanel = new JPanel();
 	private JTextField txtUserName;
 	private JTextField txtFirstName;

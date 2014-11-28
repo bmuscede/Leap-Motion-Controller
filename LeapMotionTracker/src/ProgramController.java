@@ -1,16 +1,6 @@
-import java.awt.Dimension;
 import java.awt.EventQueue;
-import java.awt.Toolkit;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.util.Dictionary;
 import java.util.Vector;
-
 import javax.swing.JOptionPane;
-
-import com.leapmotion.leap.Finger;
-import com.leapmotion.leap.Hand;
 
 public class ProgramController {
 	//GUI Objects

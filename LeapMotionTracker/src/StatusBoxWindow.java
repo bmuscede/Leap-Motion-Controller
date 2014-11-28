@@ -1,11 +1,6 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import java.awt.Window.Type;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.Font;
@@ -13,7 +8,8 @@ import javax.swing.ImageIcon;
 
 
 public class StatusBoxWindow extends JDialog {
-
+	private static final long serialVersionUID = 6501217592335020392L;
+	
 	private JPanel contentPane;
 
 	/**

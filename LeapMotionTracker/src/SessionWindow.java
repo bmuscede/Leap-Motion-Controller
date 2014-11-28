@@ -1,13 +1,9 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
-
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -22,7 +18,8 @@ import javax.swing.SwingConstants;
 
 
 public class SessionWindow extends JFrame implements ActionListener {
-
+	private static final long serialVersionUID = 6776933146081331071L;
+	
 	private JPanel contentPane;
 	private JTable tlbSessions;
 	private JButton btnPlay;
@@ -72,6 +69,10 @@ public class SessionWindow extends JFrame implements ActionListener {
 				"Session ID", "Session Date", "Session Length (HH:MM:SS)"
 			}
 		) {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -8207060806231141457L;
 			boolean[] columnEditables = new boolean[] {
 				false, false, false
 			};

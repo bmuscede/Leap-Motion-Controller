@@ -1,13 +1,8 @@
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.JButton;
 import javax.swing.ImageIcon;
-import javax.swing.JSeparator;
-import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -16,7 +11,8 @@ import java.awt.Font;
 import javax.swing.SwingConstants;
 
 public class PlaybackStatusWindow extends JFrame {
-
+	private static final long serialVersionUID = 8420269887405403173L;
+	
 	private JPanel contentPane;
 	private boolean play;
 	private final JButton btnPlayPause;

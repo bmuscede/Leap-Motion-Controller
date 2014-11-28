@@ -68,6 +68,7 @@ public class UserWindow extends JFrame implements ActionListener {
 				"User ID", "Name", "Sessions"
 			}
 		) {
+			private static final long serialVersionUID = 7509521877188570057L;
 			boolean[] columnEditables = new boolean[] {
 				false, false, false
 			};
