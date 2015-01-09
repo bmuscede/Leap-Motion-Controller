@@ -1,6 +1,8 @@
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.Vector;
 
 import javax.swing.JOptionPane;
@@ -100,7 +102,11 @@ public class PlaybackController {
 	public static boolean deleteSessionUser(String userName, String session) {
 		String sql = "DELETE FROM Session WHERE UserName = \"" + userName + "\" " +
 				"AND SessionId = " + session + ";";
-			
+		
+		//Also deletes the session from disk.
+		File deletedSession = new File(System.getProperty("user.dir") + "/data/" + userName + "/" + session);
+		deletedSession.delete();
+		
 		//Runs the statement.
 		return db.writeSQLStatement(sql);
 	}

@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.Vector;
 
 import javax.swing.JCheckBox;
@@ -224,6 +225,9 @@ public class UserWindow extends JFrame implements ActionListener {
 		//Gets the users for the object.
 		Vector<Vector<String>> users = ProgramController.getDatabaseUsers();
 		
+		//Check to see if all the directories exist.
+		checkUsers(users);
+		
 		//Sees how many users are present.
 		if (users.size() <= 1){
 			lblNoUsers.setVisible(true);
@@ -251,6 +255,48 @@ public class UserWindow extends JFrame implements ActionListener {
 			btnPlayback.setEnabled(false);
 			btnRecord.setEnabled(false);
 		}
+	}
+	
+	/**
+	 * Checks to see if all the sessions are valid on disk.
+	 * @param sessions All the sessions from the db.
+	 */
+	private void checkUsers(Vector<Vector<String>> users){
+		Vector<String> invalidUsers = new Vector<String>();
+		String workingDir = System.getProperty("user.dir");
+		
+		//Loops through each of the sessions.
+		for (int i = 1; i < users.size(); i++){
+			//Checks if the file exists for that user id.
+			File currentUser = new File(workingDir + "/data/" + users.elementAt(i).elementAt(0));
+			if (!currentUser.exists()){
+				invalidUsers.add(users.get(i).get(0));
+			}
+		}
+		
+		//At this point we only continue if there are invalid sessions.
+		if (invalidUsers.size() <= 0) return;
+		
+		//Remove each of those sessions.
+		String message = "";
+		for (int i = 0; i < invalidUsers.size(); i++){
+			//Creates a fresh user folder.
+			File currentUser = new File(workingDir + "/data/" + invalidUsers.elementAt(i));
+			currentUser.mkdir();
+			
+			//Now, adds it to the message.
+			if (i + 1 == invalidUsers.size() && i != 0){
+				message += " and " +  invalidUsers.elementAt(i);
+			} else if (i + 1 == invalidUsers.size()){
+				message += invalidUsers.elementAt(i);
+			} else {
+				message += invalidUsers.elementAt(i) + ", ";
+			}
+		}
+		
+		//Displays an error message.
+		ProgramController.createDialog("<html>The user(s) " + message + " do not have a session folder!<br>New " +
+				"session folders have been created for each!", "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
 	}
 	
 	private void loginHandler() {

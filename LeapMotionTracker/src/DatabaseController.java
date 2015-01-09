@@ -1,3 +1,7 @@
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.Vector;
 
@@ -10,9 +14,12 @@ public class DatabaseController extends Thread {
 	//Threading methods
 	private Thread dbThread;
 	private volatile Vector<byte[]> frameBuffer;
-	private volatile Vector<String> userIDBuffer;
-	private volatile Vector<String> sessionBuffer;
 	private volatile boolean stpCol;
+	
+	//For writing frames
+	private String framesUserID;
+	private String framesSession;
+	private byte[] nullByte;
 	
  	//The default session id.
 	private final String DEFAULT_SESSION = "0";
@@ -44,12 +51,28 @@ public class DatabaseController extends Thread {
 			
 			//Sets up the buffers.
 			frameBuffer = new Vector<byte[]>();
-			userIDBuffer = new Vector<String>();
-			sessionBuffer = new Vector<String>();
 			stpCol = false;
+			
+			//Sets up the session info.
+			framesUserID = null;
+			framesSession = null;
+			
+			//Sets up a null byte.
+			nullByte = ByteBuffer.allocate(4).putInt(0).array();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Passes information so that the frame writer knows which file to
+	 * write to.
+	 * @param userName The user ID of the user currently using.
+	 * @param sessionNo The session number of the current session.
+	 */
+	public void setSessionInfo(String userName, String sessionNo){
+		framesUserID = userName;
+		framesSession = sessionNo;
 	}
 	
 	/**
@@ -58,49 +81,61 @@ public class DatabaseController extends Thread {
 	 * done so long as there are items in the database.
 	 */
 	public void run() {
+		//First, creates a new file.
+		String path = System.getProperty("user.dir") + "/data/"
+				+ framesUserID + "/" + framesSession;
+		
+		FileOutputStream fileWriter = null;
+		try {
+			//Checks whether the file can be opened. (IT WILL OVERWRITE)
+			fileWriter = new FileOutputStream(path);
+		} catch (FileNotFoundException e1) {
+			//The file cannot be opened.
+			e1.printStackTrace();
+			return;
+		}
+		
 		while(true){
 			//We see if there are frames to write.
-			if (frameBuffer.size() > 0){
-				//First, generates an SQL statement for the user and frame.
-				String frameStatement = "INSERT INTO Frame VALUES(?, ?, ?, ?);";
-				
-				//Now converts it into an SQLite statement.
-				PreparedStatement statement = null;
+			if (frameBuffer.size() > 0){				
 				try {
-					//Builds the statement.
-					statement = conn.prepareStatement(frameStatement);
-					statement.setString(1, userIDBuffer.get(0));
-					statement.setString(2, sessionBuffer.get(0));
-					statement.setString(3, Integer.toString(frameID));
-					statement.setBytes(4, frameBuffer.get(0));
+					//Writes the frame to the file.
+					fileWriter.write(frameBuffer.get(0));
 					
-					//Adds the frame to a buffer.
-					statement.executeUpdate();
-				} catch (SQLException e) {
+					//Adds an empty array of bytes.
+					fileWriter.write(nullByte);
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 				
 				//Remove the frame.
-				userIDBuffer.remove(0);
-				sessionBuffer.remove(0);
 				frameBuffer.remove(0);
 				
 				//Increment the frame ID.
 				frameID++;
+			}
+			
+			//Now we see if there are things that need to be done.
+			if (stpCol){
+				//Reports it to the GUI
+				ProgramController.updateProgressBar(frameID);
 				
-				if (stpCol){
-					//Reports it to the GUI
-					ProgramController.updateProgressBar(frameID);
+				//Sees if we're done.
+				if (frameID == frameAddedID){
+					//Says we're done.
+					stpCol = false;
 					
-					//Sees if we're done.
-					if (frameID == frameAddedID){
-						//Says we're done.
-						stpCol = false;
-						
-						//Updates the GUI.
-						ProgramController.closeProgressBar();
-						break;
+					try {
+						//Closes the file.
+						fileWriter.close();
+					} catch (IOException e) {
+						//There was a problem closing.
+						e.printStackTrace();
 					}
+					
+					//Updates the GUI.
+					ProgramController.closeProgressBar();
+					break;
 				}
 			}
 		}
@@ -112,6 +147,9 @@ public class DatabaseController extends Thread {
 	 * listener. 
 	 */
 	public void start(){
+		//Only runs if this has been set.
+		if (framesUserID == null) return;
+		
 		//Checks to see if start hasn't already been invoked.
 		if (dbThread == null){
 			//Creates a new thread and starts it.
@@ -173,10 +211,8 @@ public class DatabaseController extends Thread {
 	 * @param session The session ID for the current session of the user working.
 	 * @param currentFrame The frame to be written.
 	 */
-	public boolean writeFrame(String userID, String session, byte[] frameData){
+	public boolean writeFrame(byte[] frameData){
 		frameBuffer.add(frameData);
-		userIDBuffer.add(userID);
-		sessionBuffer.add(session);
 		frameAddedID++;
 		
 		return true;

@@ -1,9 +1,7 @@
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
 import javax.swing.JOptionPane;
-
 import com.leapmotion.leap.*;
 
 public class LeapMotionController extends Thread{
@@ -93,6 +91,7 @@ public class LeapMotionController extends Thread{
 			collecting = collectionStatus;
 			
 			//Start the database thread.
+			database.setSessionInfo(currentUser, currentSession);
 			database.start();
 		} else if (!collectionStatus){
 			collecting = collectionStatus;
@@ -180,7 +179,7 @@ public class LeapMotionController extends Thread{
 		 */
 		private void saveFrame(Frame currentFrame) {
 			//We call the database controller to handle this.
-			database.writeFrame(currentUser, currentSession, currentFrame.serialize());
+			database.writeFrame(currentFrame.serialize());
 		}
 
 		private void updateStatusMessage(Frame currentFrame) {

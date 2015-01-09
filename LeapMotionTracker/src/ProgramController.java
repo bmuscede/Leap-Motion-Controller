@@ -1,6 +1,10 @@
 import java.awt.EventQueue;
+import java.io.File;
+import java.io.IOException;
 import java.util.Vector;
 import javax.swing.JOptionPane;
+
+import org.apache.commons.io.FileUtils;
 
 public class ProgramController {
 	//GUI Objects
@@ -168,12 +172,31 @@ public class ProgramController {
 				+ "\");";
 		
 		//Runs the statement.
-		return database.writeSQLStatement(sql);
+		if (!database.writeSQLStatement(sql)){
+			return false;
+		}
+		
+		//Now, we create a new user file.
+		String workingDir = System.getProperty("user.dir");
+		File file = new File(workingDir + "/data/" + userName);
+		
+		//Makes the user directory.
+		file.mkdir();
+		
+		return true;
 	}
 	
 	public static boolean deleteUser(String userName) {
 		String sql = "DELETE FROM User WHERE UserName = \"" + userName + "\";";
 	
+		//We delete the user and sessions from disk.
+		try {
+			String workingDirectory = System.getProperty("user.dir");
+			FileUtils.deleteDirectory(new File(workingDirectory + "/data/" + userName));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		//Runs the statement.
 		return database.writeSQLStatement(sql);
 	}

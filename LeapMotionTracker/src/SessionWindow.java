@@ -1,6 +1,7 @@
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
@@ -115,6 +116,10 @@ public class SessionWindow extends JFrame implements ActionListener {
 	private void refreshTable() {
 		//Gets the users for the object.
 		Vector<Vector<String>> sessions = PlaybackController.getSessions(userName);
+		if (!checkValid(sessions)){
+			refreshTable();
+			return;
+		}
 		
 		//Sees how many users are present.
 		if (sessions == null || sessions.size() <= 1){
@@ -144,6 +149,48 @@ public class SessionWindow extends JFrame implements ActionListener {
 		disableButtons();
 	}
 
+	/**
+	 * Checks to see if all the sessions are valid on disk.
+	 * @param sessions All the sessions from the db.
+	 */
+	private boolean checkValid(Vector<Vector<String>> sessions){
+		Vector<String> invalidSessions = new Vector<String>();
+		String workingDir = System.getProperty("user.dir");
+		
+		//Loops through each of the sessions.
+		for (int i = 1; i < sessions.size(); i++){
+			//Checks if the file exists for that user id.
+			File currentSession = new File(workingDir + "/data/" + userName + "/" + sessions.get(i).get(1));
+			if (!currentSession.exists()){
+				invalidSessions.add(sessions.get(i).get(1));
+			}
+		}
+		
+		//At this point we only continue if there are invalid sessions.
+		if (invalidSessions.size() <= 0) return true;
+		
+		//Remove each of those sessions.
+		String message = "";
+		for (int i = 0; i < invalidSessions.size(); i++){
+			//Deletes the session.
+			PlaybackController.deleteSessionUser(userName, invalidSessions.elementAt(i));
+			
+			//Now, adds it to the message.
+			if (i + 1 == invalidSessions.size() && i != 0){
+				message += " and " +  invalidSessions.elementAt(i);
+			} else if (i + 1 == invalidSessions.size()){
+				message += invalidSessions.elementAt(i);
+			} else {
+				message += invalidSessions.elementAt(i) + ", ";
+			}
+		}
+		
+		//Displays an error message.
+		ProgramController.createDialog("<html>The session(s) " + message + " are corrupt!<br>They have " +
+				"been removed from your system!", "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+		return false;
+	}
+	
 	private void disableButtons() {
 		btnPlay.setEnabled(false);
 		btnDelete.setEnabled(false);

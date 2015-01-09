@@ -16,15 +16,3 @@ CREATE TABLE Session(
 			ON DELETE CASCADE
 			ON UPDATE CASCADE
 	);
-
-CREATE TABLE Frame(
-	UserName VARCHAR(15) NOT NULL,
-	SessionId INT NOT NULL,
-	FrameNo INT NOT NULL,
-	FrameSerial BLOB,
-	PRIMARY KEY(UserName, SessionId, FrameNo),
-	FOREIGN KEY(UserName, SessionId)
-		REFERENCES Session(UserName, SessionId)
-			ON DELETE CASCADE
-			ON UPDATE CASCADE
-	);
