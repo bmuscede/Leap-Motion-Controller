@@ -1,9 +1,17 @@
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Vector;
+
+import javax.print.attribute.Size2DSyntax;
+
+import org.apache.commons.io.IOUtils;
 
 public class DatabaseController extends Thread {
 	private final String DATABASE_PREFIX = "jdbc:sqlite:";
@@ -19,7 +27,6 @@ public class DatabaseController extends Thread {
 	//For writing frames
 	private String framesUserID;
 	private String framesSession;
-	private byte[] nullByte;
 	
  	//The default session id.
 	private final String DEFAULT_SESSION = "0";
@@ -56,9 +63,6 @@ public class DatabaseController extends Thread {
 			//Sets up the session info.
 			framesUserID = null;
 			framesSession = null;
-			
-			//Sets up a null byte.
-			nullByte = ByteBuffer.allocate(4).putInt(0).array();
 		} catch (Exception e){
 			e.printStackTrace();
 		}
@@ -100,10 +104,9 @@ public class DatabaseController extends Thread {
 			if (frameBuffer.size() > 0){				
 				try {
 					//Writes the frame to the file.
+					fileWriter.write(ByteBuffer.allocate(4)
+							.putInt(frameBuffer.get(0).length).array());
 					fileWriter.write(frameBuffer.get(0));
-					
-					//Adds an empty array of bytes.
-					fileWriter.write(nullByte);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -342,31 +345,42 @@ public class DatabaseController extends Thread {
 	}
 
 	public Vector<byte[]> getFrames(String currentUser, String session) {
+		InputStream sessionFile = null;
+		try {
+			sessionFile = new FileInputStream(System.getProperty("user.dir") +
+					"/data/" + currentUser + "/" + session);
+		} catch (FileNotFoundException e1) {
+			//The file was not found!
+			e1.printStackTrace();
+			return null;
+		}
+		
+		//Reads all the bytes into one array.
+		byte[] allBytes = null;
+		try {
+			allBytes = IOUtils.toByteArray(sessionFile);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			return null;
+		}
+		
 		//Creates a vector to hold all serialized bytes.
 		Vector<byte[]> bytes = new Vector<byte[]>();
 		
-		//Creates the statement.
-		String sql = "SELECT FrameSerial FROM Frame WHERE UserName = \"" + currentUser + "\" " +
-				"AND SessionId = " + session + " ORDER BY FrameNo ASC";
-		
-		Statement stm=null;
-        try{
-        	//Executes the statement.
-            stm = conn.createStatement();
-            ResultSet result = stm.executeQuery(sql);
-		
-            //Loops through the result set.
-            while (result.next()){
-            	bytes.add(result.getBytes("FrameSerial"));
-            }
-            
-            //Closes the result set.
-            result.close();
-        } catch (SQLException e) {
-        	e.printStackTrace();
-        	return null;
-        }
-        
+		//Now, we need to loop through everything to get the frames.
+		int current = 0;
+		while(current < allBytes.length){
+			//Get the size data.
+			byte[] size = Arrays.copyOfRange(allBytes, current, current + 4);		
+			int nextFrameSize = new BigInteger(size).intValue();
+			
+			//Now, we copy the next set of data.
+			current += 4;
+			byte[] frame = Arrays.copyOfRange(allBytes, current, current + nextFrameSize);
+			bytes.add(frame);
+			current += nextFrameSize;
+		}
+	
 		//Finally, returns the bytes.
 		return bytes;
 	}
