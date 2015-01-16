@@ -11,6 +11,7 @@ public class ProgramController {
 	//GUI Objects
 	static UserWindow userList;
 	static SavingWindow progBar;
+	static MetricSettingsWindow window;
 	
 	//Database Communicator.
 	static DatabaseController database;
@@ -233,6 +234,7 @@ public class ProgramController {
 
 	public static void closeProgressBar() {
 		//Destroys the progress bar.
+		if (progBar == null) return;
 		progBar.setVisible(false);
 		progBar = null;
 	}
@@ -240,5 +242,61 @@ public class ProgramController {
 	public static Vector<Vector<String>> getSessions(String userName) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	public static void showMetrics(String userName, String session) {
+		window = new MetricSettingsWindow(userName, session);
+		window.setModal(true);
+		window.setVisible(true);
+	}
+	
+	public static void computeMetrics(String userName, String session,
+			boolean smoothening, boolean confidence, boolean observe, boolean sensitivity, 
+			int smootheningVal, int confidenceVal, int frameOrder, int sensitivityValue){
+		//We create a new metrics object.
+		MetricsCalculator calculate = new MetricsCalculator(userName, session);
+		
+		//We now set metrics settings.
+		calculate.setFrameSmoothening(smoothening);
+		calculate.setSmootheningWindow(smootheningVal);
+		if (confidence){
+			calculate.setConfidenceRemovalValue(confidenceVal);
+		}
+		if (observe){
+			calculate.setFrameExamineValue(frameOrder);
+		}
+		if (sensitivity){
+			calculate.setSensitivityValue(sensitivityValue);
+		}
+		//Finally, we start the calculations.
+		calculate.start();
+		
+		//Close the window.
+		window.dispose();
+		window = null;
+		
+		//Now we create the next window.
+		MetricsStatusWindow status = new MetricsStatusWindow(userName, session);
+		status.waitingForData(calculate);
+		status.setVisible(true);
+	}
+
+	public static void showMetricsData(String userName, String session) {
+		//We first need to get the MetricID.
+		String ID = database.checkForMetricID(userName, session);
+		
+		if (ID == null){
+			ProgramController.createDialog("<html>Something went wrong!<br>The data does not exist. Try" +
+					" recomputing the metric!", "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		
+		//Now, we need to retreive the data.
+		Vector<Vector<String>> data = database.getData("SELECT * FROM SessionMetrics WHERE MetricID = " + ID + ";");
+		
+		//Finally we start the status window.
+		MetricsStatusWindow status = new MetricsStatusWindow(userName, session);
+		status.setUpDataDatabase(data.elementAt(1));
+		status.setVisible(true);
 	}
 }

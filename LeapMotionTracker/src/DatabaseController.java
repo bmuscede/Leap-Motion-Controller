@@ -191,7 +191,7 @@ public class DatabaseController extends Thread {
 	 * @return A boolean indicating success or failure.
 	 */
 	public boolean writeSession(String userID, String sessionNo){
-		String sessionStatement = "INSERT INTO Session VALUES(\"" +
+		String sessionStatement = "INSERT INTO Session(UserName, SessionId, STime, SDate) VALUES(\"" +
 				userID + "\", " + sessionNo + ", 0, 0);";
 		
 		//Now writes it into the db.
@@ -383,5 +383,159 @@ public class DatabaseController extends Thread {
 	
 		//Finally, returns the bytes.
 		return bytes;
+	}
+
+	/**
+	 * This function returns a metric id or null for a specific session.
+	 * This is to ensure nothing is overwritten. 
+	 * @param userName The userName for the user.
+	 * @param sessionID The session id for the user.
+	 * @return The id for the metric.
+	 */
+	public String checkForMetricID(String userName, String sessionID){
+		//Now we need to get the auto id.
+		String sql = "SELECT MetricID FROM Session " +
+				"WHERE UserName = \"" + userName + "\" AND SessionId = " + sessionID + ";";
+		
+		ResultSet rs;
+		String id;
+		//Executes the SQL.
+		try {
+			//Executes the query and gets the result set.
+			Statement queryStatement = conn.createStatement();
+			rs = queryStatement.executeQuery(sql);
+			
+			//Now, gets the data.
+			rs.next();
+			id = rs.getString(1);
+		} catch (SQLException e) {
+			//Again, we just return.
+			e.printStackTrace();
+			return null;
+		}
+		
+		return id;
+	}
+	
+	/**
+	 * This function writes the hand motion metric data to the database.
+	 * Currently only raw metrics are stored. Averaged data will come
+	 * later on.
+	 * @param userName The username for the user.
+	 * @param sessionID The session id.
+	 * @param computedHandMotions The computed hand motion numbers.
+	 * @param computedLeftMotions The computed left hand motion.
+	 * @param computedRightMotions The computed right hand motion.
+	 */
+	public void writeMetrics(String userName, String sessionID,
+			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions) {
+		//We first check for an insert or update.
+		String checkID = checkForMetricID(userName, sessionID);
+		if (checkID != null) {
+			updateMetrics(userName, sessionID, checkID, 
+					computedHandMotions, computedLeftMotions, computedRightMotions);
+			return;
+		}
+		
+		//We first need to generate our SQL statement.
+		String sql = "INSERT INTO SessionMetrics(MetricID, LeftMotions, LeftThumbMotions, " +
+				"LeftIndexMotions, LeftMiddleMotions, LeftRingMotions, LeftPinkyMotions, " +
+				"RightMotions, RightThumbMotions, RightIndexMotions, RightMiddleMotions, " +
+				"RightRingMotions, RightPinkyMotions) VALUES(null, " + 
+				computedHandMotions[0] + ", " + 
+				computedLeftMotions[0] + ", " + 
+				computedLeftMotions[1] + ", " + 
+				computedLeftMotions[2] + ", " + 
+				computedLeftMotions[3] + ", " + 
+				computedLeftMotions[4] + ", " + 
+				computedHandMotions[1] + ", " + 
+				computedRightMotions[0] + ", " + 
+				computedRightMotions[1] + ", " + 
+				computedRightMotions[2] + ", " + 
+				computedRightMotions[3] + ", " + 
+				computedRightMotions[4] + ");";
+		
+		//Executes the generated SQL statement.
+		try {
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch (SQLException e) {
+			//Just doesn't do it!
+			e.printStackTrace();
+			return;
+		}
+		
+		//Now we need to get the auto id.
+		sql = "SELECT last_insert_rowid();";
+		
+		ResultSet rs;
+		String id;
+		//Executes the SQL.
+		try {
+			//Executes the query and gets the result set.
+			Statement queryStatement = conn.createStatement();
+			rs = queryStatement.executeQuery(sql);
+			
+			//Now, gets the data.
+			rs.next();
+			id = rs.getString(1);
+		} catch (SQLException e) {
+			//Again, we just return.
+			e.printStackTrace();
+			return;
+		}
+		
+		//Finally, we insert the auto id into the appropriate session.
+		sql = "UPDATE Session SET MetricID = " + id + 
+				" WHERE UserName = \"" + userName + "\" AND SessionId = " + sessionID + ";";
+		
+		//Executes the generated SQL statement.
+		try {
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch (SQLException e) {
+			//If there is a problem, it won't do it.
+			e.printStackTrace();
+			return;
+		}
+	}
+	
+	/**
+	 * This helper function executes an update if there is already
+	 * data metrics computed. That's all it does.
+	 * @param userName The user of the session.
+	 * @param session The session id
+	 * @param metricID The metric id for that metric
+	 * @param computedHandMotions The hand motions
+	 * @param computedLeftMotions The left hand motions
+	 * @param computedRightMotions The right hand motions
+	 */
+	private void updateMetrics(String userName, String session, String metricID,
+			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions){
+		//We generate our SQL
+		String sql = "UPDATE SessionMetrics SET " +
+				"LeftMotions = " + computedHandMotions[0] + ", " +
+				"LeftThumbMotions = " + computedLeftMotions[0] + ", " +
+				"LeftIndexMotions = " + computedLeftMotions[1] + ", " +
+				"LeftMiddleMotions = " + computedLeftMotions[2] + ", " +
+				"LeftRingMotions = " + computedLeftMotions[3] + ", " +
+				"LeftPinkyMotions = " + computedLeftMotions[4] + ", " +
+				"RightMotions = " + computedHandMotions[1] + ", " +
+				"RightThumbMotions = " + computedRightMotions[0] + ", " +
+				"RightIndexMotions = " + computedRightMotions[1] + ", " +
+				"RightMiddleMotions = " + computedRightMotions[2] + ", " +
+				"RightRingMotions = " + computedRightMotions[3] + ", " +
+				"RightPinkyMotions = " + computedRightMotions[4] +
+				" WHERE MetricID = " + metricID + ";";
+		
+		//Executes the generated SQL statement.
+		try {
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch (SQLException e) {
+			//Just doesn't do it!
+			e.printStackTrace();
+			return;
+		}
 	}
 }

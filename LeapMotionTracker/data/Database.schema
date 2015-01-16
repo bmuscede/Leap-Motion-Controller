@@ -10,9 +10,42 @@ CREATE TABLE Session(
 	SessionId INT NOT NULL,
 	STime INT,
 	SDate VARCHAR(50),
+	MetricID INT,
 	PRIMARY KEY(UserName, SessionId),
 	FOREIGN KEY(UserName)
 		REFERENCES User(UserName)
 			ON DELETE CASCADE
+			ON UPDATE CASCADE,
+	FOREIGN KEY(MetricID)
+		REFERENCES SessionMetrics(MetricID)
+			ON DELETE SET DEFAULT
 			ON UPDATE CASCADE
+	);
+	
+CREATE TABLE SessionMetrics(
+	MetricID INTEGER PRIMARY KEY AUTOINCREMENT,
+	LeftMotions INT,
+	LeftThumbMotions INT,
+	LeftIndexMotions INT,
+	LeftMiddleMotions INT,
+	LeftRingMotions INT,
+	LeftPinkyMotions INT,
+	RightMotions INT,
+	RightThumbMotions INT,
+	RightIndexMotions INT,
+	RightMiddleMotions INT,
+	RightRingMotions INT,
+	RightPinkyMotions INT,
+	LeftVelocity INT,
+	LeftThumbVelocity INT,
+	LeftIndexVelocity INT,
+	LeftMiddleVelocity INT,
+	LeftRingVelocity INT,
+	LeftPinkyVelocity INT,
+	RightVelocity INT,
+	RightThumbVelocity INT,
+	RightIndexVelocity INT,
+	RightMiddleVelocity INT,
+	RightRingVelocity INT,
+	RightPinkyVelocity INT
 	);

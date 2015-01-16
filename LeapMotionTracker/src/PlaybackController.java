@@ -183,4 +183,10 @@ public class PlaybackController {
 	public static void pause(){
 		sessionPlayback.pause();
 	}
+
+	public static void refreshSessionWindow() {
+		//Ensure we can actually refresh.
+		if (playback == null) return;
+		playback.refreshTable();
+	}
 }

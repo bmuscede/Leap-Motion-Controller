@@ -25,6 +25,8 @@ public class SessionWindow extends JFrame implements ActionListener {
 	private JTable tlbSessions;
 	private JButton btnPlay;
 	private JButton btnDelete;
+	private JButton btnCompute;
+	private JButton btnView;
 	private JLabel lblNoSessions;
 	private String userName;
 	
@@ -37,7 +39,7 @@ public class SessionWindow extends JFrame implements ActionListener {
 		setResizable(false);
 		setTitle("Leap Motion Controller - [Sessions] ");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 490, 310);
+		setBounds(100, 100, 490, 338);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -67,20 +69,9 @@ public class SessionWindow extends JFrame implements ActionListener {
 			new Object[][] {
 			},
 			new String[] {
-				"Session ID", "Session Date", "Session Length (HH:MM:SS)"
+				"Session ID", "Session Date", "Session Length (HH:MM:SS)", "Metrics Calculated"
 			}
-		) {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = -8207060806231141457L;
-			boolean[] columnEditables = new boolean[] {
-				false, false, false
-			};
-			public boolean isCellEditable(int row, int column) {
-				return columnEditables[column];
-			}
-		});
+		));
 		tlbSessions.getColumnModel().getColumn(0).setPreferredWidth(37);
 		tlbSessions.addMouseListener(new java.awt.event.MouseAdapter() {
 		    @Override
@@ -89,9 +80,20 @@ public class SessionWindow extends JFrame implements ActionListener {
 		    	int row = tlbSessions.rowAtPoint(evt.getPoint());
 		    	if (row < 0) return;
 		    	
+		    	//Retitles the buttons for metrics.
+		    	String metricValue = (String) tlbSessions.getValueAt(row, 3);
+		    	if (metricValue.equals("No")){
+		    		btnCompute.setText("Compute Metrics");
+		    		btnView.setEnabled(false);
+		    	} else {
+		    		btnCompute.setText("Recompute Metrics");
+		    		btnView.setEnabled(true);
+		    	}
+		    	
 		    	//Enables the buttons.
 		    	btnPlay.setEnabled(true);
 		    	btnDelete.setEnabled(true);
+		    	btnCompute.setEnabled(true);
 		    }
 		});
 		
@@ -109,11 +111,21 @@ public class SessionWindow extends JFrame implements ActionListener {
 		sepOptions.setBounds(10, 242, 467, 2);
 		contentPane.add(sepOptions);
 		
+		btnCompute = new JButton("Compute Metrics");
+		btnCompute.addActionListener(this);
+		btnCompute.setBounds(68, 281, 171, 23);
+		contentPane.add(btnCompute);
+		
+		btnView = new JButton("View Session Metrics");
+		btnView.addActionListener(this);
+		btnView.setBounds(252, 281, 171, 23);
+		contentPane.add(btnView);
+		
 		//Refreshes the table.
 		refreshTable();
 	}
 	
-	private void refreshTable() {
+	public void refreshTable() {
 		//Gets the users for the object.
 		Vector<Vector<String>> sessions = PlaybackController.getSessions(userName);
 		if (!checkValid(sessions)){
@@ -143,7 +155,9 @@ public class SessionWindow extends JFrame implements ActionListener {
         	//Adds the rows in.
 			modelUsers.addRow(new Object[]{currentSession.elementAt(1), 
 										   currentSession.elementAt(3), 
-										   value});
+										   value,
+										   currentSession.elementAt(4) != null ?
+												   "Yes" : "No"});
 		}
 		
 		disableButtons();
@@ -194,6 +208,8 @@ public class SessionWindow extends JFrame implements ActionListener {
 	private void disableButtons() {
 		btnPlay.setEnabled(false);
 		btnDelete.setEnabled(false);
+		btnCompute.setEnabled(false);
+		btnView.setEnabled(false);
 	}
 
 	public void actionPerformed(ActionEvent event) {
@@ -202,7 +218,29 @@ public class SessionWindow extends JFrame implements ActionListener {
 			playHandler();
 		} else if (event.getSource().equals(btnDelete)){
 			deleteSelectedSession();
+		} else if (event.getSource().equals(btnCompute)){
+			computeHandler();
+		} else if (event.getSource().equals(btnView)){
+			viewHandler();
 		}
+	}
+
+	private void viewHandler(){
+		//We get the selected session id.
+		int row = tlbSessions.getSelectedRow();
+			
+		//Now we get the session number.
+		String session = (String) tlbSessions.getValueAt(row, 0);
+		ProgramController.showMetricsData(userName, session);
+	}
+	
+	private void computeHandler() {
+		//We get the selected session id.
+		int row = tlbSessions.getSelectedRow();
+		
+		//Now we get the session number.
+		String session = (String) tlbSessions.getValueAt(row, 0);
+		ProgramController.showMetrics(userName, session);
 	}
 
 	private void playHandler() {
