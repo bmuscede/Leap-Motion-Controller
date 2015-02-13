@@ -20,12 +20,15 @@ import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.plot.Plot;
 import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.title.LegendTitle;
 import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.category.DefaultCategoryDataset;
 import org.jfree.data.general.Dataset;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.xy.DefaultXYDataset;
 import org.jfree.data.xy.XYDataset;
-
+import org.jfree.data.xy.XYSeries;
+import org.jfree.ui.HorizontalAlignment;
 
 public class MetricsStatusWindow extends JFrame {
 	private JPanel contentPane;
@@ -74,7 +77,9 @@ public class MetricsStatusWindow extends JFrame {
 	private JLabel lblRightVelocityFour;
 	private JLabel lblRightMoveData;
 	private JLabel lblRightVelocityData;
-	
+	private ChartPanel pnlChart;
+	private JFreeChart freeChart;
+
 	//User Variables.
 	private String userName;
 	private String session;
@@ -83,21 +88,30 @@ public class MetricsStatusWindow extends JFrame {
 	private MetricsCalculator calculator;
 	private Timer calcTimer;
 	
-
 	//Finger Types
 	private final String[] FINGERS = {"Thumb", 
 			                          "Index Finger",
 			                          "Middle Finger",
 			                          "Ring Finger",
-			                          "Pinky Finger"};
+			                          "Pinky Finger",
+			                          "Palm"};
 	private JLabel[] LEFT_INFO_GROUP;
 	private JLabel[] LEFT_DATA_MOVEMENT_GROUP;
+	private JLabel[] LEFT_DATA_VELOCITY_GROUP;
 	private JLabel[] RIGHT_INFO_GROUP;
 	private JLabel[] RIGHT_DATA_MOVEMENT_GROUP;
+	private JLabel[] RIGHT_DATA_VELOCITY_GROUP;
 	
-	private ChartPanel pnlChart;
-	private JFreeChart freeChart;
-
+	//Chart Variables
+	public enum ChartType {
+		MOTION_BAR, VEL_BAR, MOTION_LNE, VEL_LNE
+	}
+	private final String[] BAR_CATEGORIES = {
+			"Left Hand",
+			"Right Hand",
+			"Average"
+	};
+	
 	/**
 	 * Create the frame.
 	 */
@@ -133,7 +147,7 @@ public class MetricsStatusWindow extends JFrame {
 		lblLeftMoveData = new JLabel("?");
 		lblLeftMoveData.setToolTipText("");
 		lblLeftMoveData.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lblLeftMoveData.setBounds(269, 53, 60, 22);
+		lblLeftMoveData.setBounds(269, 53, 160, 22);
 		pnlLeft.add(lblLeftMoveData);
 		
 		lblLeftVelocity = new JLabel("<html><b>Overall</b> Average Hand Motion Velocity:</html>");
@@ -144,7 +158,7 @@ public class MetricsStatusWindow extends JFrame {
 		lblLeftVelocityData = new JLabel("?");
 		lblLeftVelocityData.setToolTipText("");
 		lblLeftVelocityData.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lblLeftVelocityData.setBounds(269, 80, 60, 22);
+		lblLeftVelocityData.setBounds(269, 80, 160, 22);
 		pnlLeft.add(lblLeftVelocityData);
 		
 		JSeparator separator = new JSeparator();
@@ -160,15 +174,15 @@ public class MetricsStatusWindow extends JFrame {
 		
 		lblLeftFingerZero = new JLabel("Finger 0:");
 		lblLeftFingerZero.setFont(new Font("Tahoma", Font.PLAIN, 12));
-		lblLeftFingerZero.setBounds(20, 142, 79, 14);
+		lblLeftFingerZero.setBounds(10, 142, 79, 14);
 		pnlLeft.add(lblLeftFingerZero);
 		
 		lblLeftMovementsZero = new JLabel("Movement: ?");
-		lblLeftMovementsZero.setBounds(30, 160, 120, 14);
+		lblLeftMovementsZero.setBounds(10, 160, 140, 14);
 		pnlLeft.add(lblLeftMovementsZero);
 		
 		lblLeftVelocityZero = new JLabel("Velocity: ?");
-		lblLeftVelocityZero.setBounds(30, 177, 120, 14);
+		lblLeftVelocityZero.setBounds(10, 177, 140, 14);
 		pnlLeft.add(lblLeftVelocityZero);
 		
 		lblLeftFingerOne = new JLabel("Finger 1:");
@@ -177,11 +191,11 @@ public class MetricsStatusWindow extends JFrame {
 		pnlLeft.add(lblLeftFingerOne);
 		
 		lblLeftMovementsOne = new JLabel("Movement: ?");
-		lblLeftMovementsOne.setBounds(29, 209, 120, 14);
+		lblLeftMovementsOne.setBounds(10, 209, 139, 14);
 		pnlLeft.add(lblLeftMovementsOne);
 		
 		lblLeftVelocityOne = new JLabel("Velocity: ?");
-		lblLeftVelocityOne.setBounds(30, 225, 120, 14);
+		lblLeftVelocityOne.setBounds(10, 225, 140, 14);
 		pnlLeft.add(lblLeftVelocityOne);
 		
 		lblLeftFingerTwo = new JLabel("Finger 2:");
@@ -225,6 +239,7 @@ public class MetricsStatusWindow extends JFrame {
 		pnlRight.add(lblRightHandData);
 		
 		lblRightMove = new JLabel("<html>Number of <b>Overall</b> Hand Movements:</html>");
+		lblRightMove.setHorizontalAlignment(SwingConstants.TRAILING);
 		lblRightMove.setFont(new Font("Tahoma", Font.PLAIN, 14));
 		lblRightMove.setBounds(20, 53, 239, 22);
 		pnlRight.add(lblRightMove);
@@ -232,7 +247,7 @@ public class MetricsStatusWindow extends JFrame {
 		lblRightMoveData = new JLabel("?");
 		lblRightMoveData.setToolTipText("");
 		lblRightMoveData.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lblRightMoveData.setBounds(269, 53, 60, 22);
+		lblRightMoveData.setBounds(269, 53, 160, 22);
 		pnlRight.add(lblRightMoveData);
 		
 		lblRightVelocity = new JLabel("<html><b>Overall</b> Average Hand Motion Velocity:</html>");
@@ -243,7 +258,7 @@ public class MetricsStatusWindow extends JFrame {
 		lblRightVelocityData = new JLabel("?");
 		lblRightVelocityData.setToolTipText("");
 		lblRightVelocityData.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		lblRightVelocityData.setBounds(269, 80, 60, 22);
+		lblRightVelocityData.setBounds(269, 80, 160, 22);
 		pnlRight.add(lblRightVelocityData);
 		
 		separator_1 = new JSeparator();
@@ -259,15 +274,15 @@ public class MetricsStatusWindow extends JFrame {
 		
 		lblRightFingerZero = new JLabel("Finger 0:");
 		lblRightFingerZero.setFont(new Font("Tahoma", Font.PLAIN, 12));
-		lblRightFingerZero.setBounds(20, 142, 79, 14);
+		lblRightFingerZero.setBounds(10, 142, 89, 14);
 		pnlRight.add(lblRightFingerZero);
 		
 		lblRightMovementsZero = new JLabel("Movement: ?");
-		lblRightMovementsZero.setBounds(30, 160, 120, 14);
+		lblRightMovementsZero.setBounds(10, 160, 140, 14);
 		pnlRight.add(lblRightMovementsZero);
 		
 		lblRightVelocityZero = new JLabel("Velocity: ?");
-		lblRightVelocityZero.setBounds(30, 177, 120, 14);
+		lblRightVelocityZero.setBounds(10, 177, 140, 14);
 		pnlRight.add(lblRightVelocityZero);
 		
 		lblRightFingerOne = new JLabel("Finger 1:");
@@ -276,11 +291,11 @@ public class MetricsStatusWindow extends JFrame {
 		pnlRight.add(lblRightFingerOne);
 		
 		lblRightMovementsOne = new JLabel("Movement: ?");
-		lblRightMovementsOne.setBounds(29, 209, 120, 14);
+		lblRightMovementsOne.setBounds(10, 209, 139, 14);
 		pnlRight.add(lblRightMovementsOne);
 		
 		lblRightVelocityOne = new JLabel("Velocity: ?");
-		lblRightVelocityOne.setBounds(30, 225, 120, 14);
+		lblRightVelocityOne.setBounds(10, 225, 140, 14);
 		pnlRight.add(lblRightVelocityOne);
 		
 		lblRightFingerTwo = new JLabel("Finger 2:");
@@ -327,7 +342,7 @@ public class MetricsStatusWindow extends JFrame {
 		pnlGraph.setLayout(null);
 		
 		pnlChart = new ChartPanel(freeChart);
-		pnlChart.setBounds(10, 11, 419, 221);
+		pnlChart.setBounds(0, 0, 439, 243);
 		pnlGraph.add(pnlChart);
 		
 		pnlLoading = new JPanel();
@@ -378,6 +393,13 @@ public class MetricsStatusWindow extends JFrame {
 		LEFT_DATA_MOVEMENT_GROUP[3] = lblLeftMovementsThree;
 		LEFT_DATA_MOVEMENT_GROUP[4] = lblLeftMovementsFour;
 		
+		LEFT_DATA_VELOCITY_GROUP = new JLabel[5];
+		LEFT_DATA_VELOCITY_GROUP[0] = lblLeftVelocityZero;
+		LEFT_DATA_VELOCITY_GROUP[1] = lblLeftVelocityOne;
+		LEFT_DATA_VELOCITY_GROUP[2] = lblLeftVelocityTwo;
+		LEFT_DATA_VELOCITY_GROUP[3] = lblLeftVelocityThree;
+		LEFT_DATA_VELOCITY_GROUP[4] = lblLeftVelocityFour;
+		
 		RIGHT_INFO_GROUP = new JLabel[5];
 		RIGHT_INFO_GROUP[0] = lblRightFingerZero;
 		RIGHT_INFO_GROUP[1] = lblRightFingerOne;
@@ -391,6 +413,13 @@ public class MetricsStatusWindow extends JFrame {
 		RIGHT_DATA_MOVEMENT_GROUP[2] = lblRightMovementsTwo;
 		RIGHT_DATA_MOVEMENT_GROUP[3] = lblRightMovementsThree;
 		RIGHT_DATA_MOVEMENT_GROUP[4] = lblRightMovementsFour;
+		
+		RIGHT_DATA_VELOCITY_GROUP = new JLabel[5];
+		RIGHT_DATA_VELOCITY_GROUP[0] = lblRightVelocityZero;
+		RIGHT_DATA_VELOCITY_GROUP[1] = lblRightVelocityOne;
+		RIGHT_DATA_VELOCITY_GROUP[2] = lblRightVelocityTwo;
+		RIGHT_DATA_VELOCITY_GROUP[3] = lblRightVelocityThree;
+		RIGHT_DATA_VELOCITY_GROUP[4] = lblRightVelocityFour;
 	}
 	
 	public void waitingForData(MetricsCalculator calculator){
@@ -413,44 +442,99 @@ public class MetricsStatusWindow extends JFrame {
 		int[] handMotions = calculator.getHandMotions();
 		int[] leftFingerMotions = calculator.getFingerMotions(true);
 		int[] rightFingerMotions = calculator.getFingerMotions(false);
+		float[] handVelocity = calculator.getHandVelocity();
+		float[] leftFingerVelocity = calculator.getFingerVelocity(true);
+		float[] rightFingerVelocity = calculator.getFingerVelocity(false);
 		
 		//First, we set up left hand.
 		lblLeftMoveData.setText(Integer.toString(handMotions[0]));
+		lblLeftVelocityData.setText(Float.toString(handVelocity[0]));
 		for (int i = 0; i < leftFingerMotions.length; i++){
 			//Sets the internal labels.
 			LEFT_INFO_GROUP[i].setText(FINGERS[i] + ":");
 			LEFT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + leftFingerMotions[i]);
+			LEFT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + leftFingerVelocity[i]);
 		}
 		
 		//Next, we set up the right hand.
 		lblRightMoveData.setText(Integer.toString(handMotions[1]));
+		lblRightVelocityData.setText(Float.toString(handVelocity[1]));
 		for (int i = 0; i < rightFingerMotions.length; i++){
 			//Sets the internal labels.
 			RIGHT_INFO_GROUP[i].setText(FINGERS[i] + ":");
 			RIGHT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + rightFingerMotions[i]);
+			RIGHT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + rightFingerVelocity[i]);
 		}
 		
 		//Finally, we generate the chart.
-		generateChart();
+		generateChart(ChartType.MOTION_BAR);
 	}
 	
-	private void generateChart() {
+	private void generateChart(ChartType type) {
 		//Develops the dataset.
-		 XYDataset ds = createDataset();
-         freeChart = ChartFactory.createXYLineChart("Test Chart",
-                 "x", "y", ds, PlotOrientation.VERTICAL, true, true,
-                 false);
+		 Dataset ds = createDataset(type);
+		 
+		 //Creates general chart look and feel.
+		 if (type == ChartType.MOTION_BAR || type == ChartType.VEL_BAR){
+	         freeChart = ChartFactory.createBarChart(type == ChartType.MOTION_BAR ? "Hand Motions Per Hand" :
+					 								 	"Velocity Per Hand", 	
+	        		 								 "",
+	                 								 type == ChartType.MOTION_BAR ? "# of Motions" :
+	                 									 "Velocity", 
+	                 								 (CategoryDataset) ds, 
+	                 								 PlotOrientation.VERTICAL, 
+	                 								 true, 
+	                 								 true,
+	                 								 false);
+		 } else {
+			 
+		 }
+         
+         //Redraws the chart.
+		 freeChart.setBackgroundPaint(pnlLoading.getBackground());
          pnlChart.setChart(freeChart);
 	}
 
-	private XYDataset createDataset() {
-        DefaultXYDataset ds = new DefaultXYDataset();
+	private Dataset createDataset(ChartType type) {
+		//Creates a new dataset.
+		Dataset data = null;
 
-        double[][] data = { {0.1, 0.2, 0.3}, {1, 2, 3} };
-
-        ds.addSeries("series1", data);
-
-        return ds;
+        //Determines what type of dataset is created.
+        if (type == ChartType.VEL_BAR || type == ChartType.MOTION_BAR){
+        	DefaultCategoryDataset ds = new DefaultCategoryDataset();
+        	
+        	//Loops to generate the data.
+        	for (int i = 0; i < BAR_CATEGORIES.length - 1; i++){
+        		//Gets the data for that hand.
+        		int[] fingers = null;
+        		int[] hands = null;
+        		if (type == ChartType.MOTION_BAR){
+        			fingers = calculator.getFingerMotions((i % 2 == 0) ? true : false);
+        			hands = calculator.getHandMotions();
+        		}
+        		
+        		//Loops to get the finger data.
+        		int j;
+        		for (j = 0; j < FINGERS.length - 1; j++){
+        			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
+        		}
+        		
+        		//Adds in the palm.
+        		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
+        	}
+        	
+        	//Sets this to be the data.
+        	data = ds;
+        } else {
+        	//We need to start by generating the data.    		
+        	if (type == ChartType.MOTION_LNE){        		
+        		
+        	} else {
+        		
+        	}
+        }
+        
+        return data;
 	}
 
 	public void setUpDataDatabase(Vector<String> values){
@@ -465,6 +549,9 @@ public class MetricsStatusWindow extends JFrame {
 		//Next we add the hand values first.
 		lblLeftMoveData.setText(values.elementAt(1));
 		lblRightMoveData.setText(values.elementAt(7));
+		
+		//Finally, we generate the chart.
+		generateChart(ChartType.MOTION_BAR);
 		
 		//We hide the loading panel and show the data panel.
 		tabbedPane.setVisible(true);

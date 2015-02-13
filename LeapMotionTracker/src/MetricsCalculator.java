@@ -45,8 +45,9 @@ public class MetricsCalculator implements Runnable {
 	private int[] computedHandMotions;
 	private int[] computedLeftMotions;
 	private int[] computedRightMotions;
-	
-	private int[] computedVelocity;
+	private float[] computedHandVel;
+	private float[] computedLeftVel;
+	private float[] computedRightVel;
 	
 	//Technical objects.
 	private DatabaseController db;
@@ -177,6 +178,36 @@ public class MetricsCalculator implements Runnable {
 		
 		return computedRightMotions;
 	}
+	
+	/**
+	 * Returns the computed hand velocity.
+	 * Only works when the calculator is
+	 * finished.
+	 * @return The number of hand motions or
+	 * null if not completed.
+	 */
+	public float[] getHandVelocity(){
+		//Ensures the data is done.
+		if (done == false) return null;
+		
+		return computedHandVel;
+	}
+	
+	/**
+	 * Returns the computed finger velocity
+	 * for a specific hand. Only works
+	 * if the calculator is finished.
+	 * @param isLeft If you want the left hand fingers.
+	 * @return Data on the fingers.
+	 */
+	public float[] getFingerVelocity(boolean isLeft){
+		//Ensures the data is done.
+		if (done == false) return null;
+		if (isLeft) return computedLeftVel;
+		
+		return computedRightVel;
+	}
+	
 	/**
 	 * Starts a new thread. This ensures only one thread
 	 * is running at a time.
@@ -206,19 +237,12 @@ public class MetricsCalculator implements Runnable {
 		//Finally, we actually compute the value.
 		int numMotions[] = computeNumberMotions();
 		
+		//Now, we compute the velocity.
+		float velocity[] = computeVelocity();
+		
 		//Delivers the data to the global variables.
-		computedHandMotions = new int[2];
-		computedLeftMotions = new int[5];
-		computedRightMotions = new int[5];
-		for (int i = 0; i < 2; i++){
-			computedHandMotions[i] = numMotions[i];
-		}
-		for (int i = 2; i < 7; i++){
-			computedLeftMotions[i - 2] = numMotions[i];
-		}
-		for (int i = 7; i < 12; i++){
-			computedRightMotions[i - 7] = numMotions[i];
-		}
+		storeHandMotions(numMotions);
+		storeVelocity(velocity);
 		
 		//Writes to database.
 		db.writeMetrics(userName, sessionID, 
@@ -228,6 +252,65 @@ public class MetricsCalculator implements Runnable {
 		done = true;
 	}
 	
+	private float[] computeVelocity() {
+		//Creates an array for the left and right hands.
+		float[] velocity = new float[12];
+		int[] setSize = new int[12];
+		
+		//We initialize the array to 0.
+		for (int i = 0; i < 12; i++){
+			setSize[i] = 0;
+			velocity[i] = 0;
+		}
+		
+		//Now we iterate until there is no more.
+		for (int i = 0; i < frames.size(); i+= frameExamineValue){
+			//We get the frame.
+			Frame current = frames.elementAt(i);
+			
+			//We loop through each of the hands for that finger.
+			for (int j = 0; j < current.hands().count(); j++){
+				Hand hand = current.hands().get(j);
+				
+				//We get the palm average.
+				float currVel = hand.palmVelocity().magnitude();
+				if (hand.isLeft()){
+					//Compute the running average.
+					velocity[0] += currVel;
+					setSize[0]++;
+					velocity[0] = velocity[0] / setSize[0];
+				} else {
+					//Compute the running average.
+					velocity[1] += currVel;
+					setSize[1]++;
+					velocity[1] = velocity[1] / setSize[1];
+				}
+				
+				//Now, we iterate through the fingers.
+				for (int k = 0; k < hand.fingers().count(); k++){
+					Finger finger = hand.fingers().get(k);
+					
+					//First, we get the palm average.
+					currVel = finger.tipVelocity().magnitude();
+					
+					//Now we need to figure out what to associate it with.
+					int pos = 0;
+					if (hand.isLeft())
+						pos = finger.type().swigValue() + LEFT_HAND_OFFSET;
+					else 
+						pos = finger.type().swigValue() + RIGHT_HAND_OFFSET;
+					
+					//We then compute the average.
+					velocity[pos] += currVel;
+					setSize[pos]++;
+					velocity[pos] = velocity[pos] / setSize[pos];
+				}
+			}
+		}
+		
+		return velocity;
+	}
+
 	/**
 	 * Loads in all the frames from the
 	 * session that is specified in the object.
@@ -587,5 +670,37 @@ public class MetricsCalculator implements Runnable {
 		if (magnitude > sensitivityValue) return true;
 		
 		return false;
+	}
+	
+	private void storeHandMotions(int[] numMotions){
+		computedHandMotions = new int[2];
+		computedLeftMotions = new int[5];
+		computedRightMotions = new int[5];
+		
+		for (int i = 0; i < 2; i++){
+			computedHandMotions[i] = numMotions[i];
+		}
+		for (int i = 2; i < 7; i++){
+			computedLeftMotions[i - 2] = numMotions[i];
+		}
+		for (int i = 7; i < 12; i++){
+			computedRightMotions[i - 7] = numMotions[i];
+		}
+	}
+	
+	private void storeVelocity(float[] velocity){
+		computedHandVel = new float[2];
+		computedLeftVel = new float[5];
+		computedRightVel = new float[5];
+		
+		for (int i = 0; i < 2; i++){
+			computedHandVel[i] = velocity[i];
+		}
+		for (int i = 2; i < 7; i++){
+			computedLeftVel[i - 2] = velocity[i];
+		}
+		for (int i = 7; i < 12; i++){
+			computedRightVel[i - 7] = velocity[i];
+		}
 	}
 }
