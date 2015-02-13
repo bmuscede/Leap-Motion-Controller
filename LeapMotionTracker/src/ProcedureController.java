@@ -43,8 +43,10 @@ public class ProcedureController {
 	 * Creates all the windows and starts
 	 * the appropriate visualizer/options.
 	 * @param userName The username of the person using it.
+	 * @param limited 
 	 */
-	public static void startProcedureProgram(final String userName, final DatabaseController database){
+	public static void startProcedureProgram(final String userName, final DatabaseController database, 
+			final boolean limited){
 		//Provides full program functionality.
 		visualizerFailure = false;
 		
@@ -57,18 +59,23 @@ public class ProcedureController {
 					status = new StatusWindow();
 					handLeft = new HandDataWindow(true);
 					handRight = new HandDataWindow(false);
-					vizStatus = 
-							new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
+					if (!limited){
+						vizStatus = new StatusBoxWindow("<html><center>Starting the Visualizer...<br>" +
 									"Please wait.</center></html>");
+					}
 					
 					//Positions the windows accordingly.
-			        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-			        status.setLocation(0, 0);
-			        handLeft.setLocation(0, 
-			        		(int) dim.getHeight() - handLeft.getHeight() - ProgramController.START_BAR_HEIGHT);
-			        handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
-			        		(int) dim.getHeight() - handRight.getHeight() - ProgramController.START_BAR_HEIGHT);
-			        vizStatus.setLocationRelativeTo(null);
+					Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+					handLeft.setLocation(0, 
+				    		(int) dim.getHeight() - handLeft.getHeight() - ProgramController.START_BAR_HEIGHT);
+				    handRight.setLocation((int) dim.getWidth() - handRight.getWidth(),
+				      		(int) dim.getHeight() - handRight.getHeight() - ProgramController.START_BAR_HEIGHT);
+					if (limited){
+						status.setLocationRelativeTo(null);
+					} else {
+						status.setLocation(0, 0);
+					    vizStatus.setLocationRelativeTo(null);
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -87,32 +94,34 @@ public class ProcedureController {
 				controller.start();
 
 				//Starts the visualizer maximized.
-				String workingDir = System.getProperty("user.dir");
-				try{
-					visualizerProcess = new ProcessBuilder(
-							workingDir + "/Visualizer/Visualizer.exe").start();
-					
-					//If that works, create the shutdown hook.
-					Runtime.getRuntime().addShutdownHook(new Thread(){
-						public void run(){
-							//Kills the visualizer when the program terminates.
-							ProcedureController.visualizerProcess.destroy();
-							
-							//Kills the controller.
-							controller.destroyController();
-						}
-					});
-				} catch (IOException e){
-					//The program had trouble executing. Likely doesn't exist!
-					visualizerFailure = true;
-					ProgramController.createDialog("<html>The program \'Visualizer.exe\' could not be " +
-							"found on your system!<br>The program will now continue " +
-							"but in limited mode.</html>", 
-							"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+				if (!limited){
+					String workingDir = System.getProperty("user.dir");
+					try{
+						visualizerProcess = new ProcessBuilder(
+								workingDir + "/Visualizer/Visualizer.exe").start();
+						
+						//If that works, create the shutdown hook.
+						Runtime.getRuntime().addShutdownHook(new Thread(){
+							public void run(){
+								//Kills the visualizer when the program terminates.
+								ProcedureController.visualizerProcess.destroy();
+								
+								//Kills the controller.
+								controller.destroyController();
+							}
+						});
+					} catch (IOException e){
+						//The program had trouble executing. Likely doesn't exist!
+						visualizerFailure = true;
+						ProgramController.createDialog("<html>The program \'Visualizer.exe\' could not be " +
+								"found on your system!<br>The program will now continue " +
+								"but in limited mode.</html>", 
+								"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+					}
 				}
 								
 				//Finally, adds a dialog indicating the visualizer is not ready.
-				if (!visualizerFailure){
+				if (!visualizerFailure && !limited){
 					//Creates a message box telling the user to be patient.
 					vizStatus.setVisible(true);
 				}

@@ -91,8 +91,9 @@ public class ProgramController {
 	/**
 	 * Runs when the user selects for the
 	 * procedure view to be run.
+	 * @param limited 
 	 */
-	public static void runProcedureView(String user){
+	public static void runProcedureView(String user, boolean limited){
 		//First, alerts that it's a procedure view.
 		procedureView = true;
 		
@@ -100,7 +101,7 @@ public class ProgramController {
 		userList.setVisible(false);
 		
 		//Activates the Procedure controller.
-		ProcedureController.startProcedureProgram(user, database);
+		ProcedureController.startProcedureProgram(user, database, limited);
 	}
 	
 	/**
@@ -291,7 +292,7 @@ public class ProgramController {
 			return;
 		}
 		
-		//Now, we need to retreive the data.
+		//Now, we need to retrieve the data.
 		Vector<Vector<String>> data = database.getData("SELECT * FROM SessionMetrics WHERE MetricID = " + ID + ";");
 		
 		//Finally we start the status window.

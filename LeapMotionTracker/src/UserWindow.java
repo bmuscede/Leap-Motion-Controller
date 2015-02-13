@@ -29,6 +29,7 @@ public class UserWindow extends JFrame implements ActionListener {
 	private JButton btnNew;
 	private JButton btnPlayback;
 	private JLabel lblNoUsers;
+	private JCheckBox chkLimited;
 	
 	/**
 	 * Create the frame.
@@ -130,8 +131,7 @@ public class UserWindow extends JFrame implements ActionListener {
 		lblProgramOptions.setBounds(10, 255, 147, 39);
 		contentPane.add(lblProgramOptions);
 		
-		JCheckBox chkLimited = new JCheckBox("Start Program in Limited Mode");
-		chkLimited.setEnabled(false);
+		chkLimited = new JCheckBox("Start Program in Limited Mode");
 		chkLimited.setBounds(157, 250, 322, 23);
 		contentPane.add(chkLimited);
 		
@@ -304,10 +304,13 @@ public class UserWindow extends JFrame implements ActionListener {
 		int rowIndex = tlbUsers.getSelectedRow();
 		if (rowIndex < 0) return;
 		
+		//We get whether or not we want limited mode.
+		boolean limited = chkLimited.isSelected();
+		
 		//Now, we get all the appropriate values to pass on to the program controller.
 		String userName = (String) tlbUsers.getModel().getValueAt(rowIndex, 0);
 		
 		//Finally starts the visualizer.
-		ProgramController.runProcedureView(userName);
+		ProgramController.runProcedureView(userName, limited);
 	}
 }

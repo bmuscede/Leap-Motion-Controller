@@ -5,7 +5,7 @@
 .project
 bin/
 .settings/
-data/*
+data/
 
 #Unity Program
 LeapMotionTracker/Visualizer
