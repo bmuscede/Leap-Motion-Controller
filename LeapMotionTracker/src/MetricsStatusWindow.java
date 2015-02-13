@@ -3,8 +3,13 @@ import java.awt.EventQueue;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
 import java.awt.Window.Type;
 import net.miginfocom.swing.MigLayout;
+
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -29,6 +34,13 @@ import org.jfree.data.xy.DefaultXYDataset;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.ui.HorizontalAlignment;
+import javax.swing.JComboBox;
+import javax.swing.JButton;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.FileFilter;
+import java.io.IOException;
 
 public class MetricsStatusWindow extends JFrame {
 	private JPanel contentPane;
@@ -79,7 +91,9 @@ public class MetricsStatusWindow extends JFrame {
 	private JLabel lblRightVelocityData;
 	private ChartPanel pnlChart;
 	private JFreeChart freeChart;
-
+	private JButton btnModifyChart;
+	private JButton btnSaveChart;
+	
 	//User Variables.
 	private String userName;
 	private String session;
@@ -344,6 +358,51 @@ public class MetricsStatusWindow extends JFrame {
 		pnlChart = new ChartPanel(freeChart);
 		pnlChart.setBounds(0, 0, 439, 243);
 		pnlGraph.add(pnlChart);
+		pnlChart.setLayout(null);
+		
+		btnSaveChart = new JButton("Save Chart...");
+		btnSaveChart.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				//Prompts the user for a save file.
+				JFileChooser dialog = new JFileChooser();
+				
+				//Sets the file filter.
+				dialog.removeChoosableFileFilter(dialog.getFileFilter());
+				dialog.addChoosableFileFilter(new FileNameExtensionFilter("JPG File (.jpg)", "jpg"));
+				dialog.addChoosableFileFilter(new FileNameExtensionFilter("JPEG File (.jpeg)", "jpeg"));
+				
+				int retCode = dialog.showSaveDialog(MetricsStatusWindow.this);
+				
+				//Check the return code.
+				if (retCode != 0)
+					return;
+				
+				//We generate an output file.
+				String path = dialog.getSelectedFile().getAbsolutePath();
+				if (dialog.getFileFilter().getDescription().equals("JPG File (.jpg)") &&
+						!path.endsWith("jpg")){
+					path += ".jpg";
+				} else if ((dialog.getFileFilter().getDescription().equals("JPEG File (.jpeg)") &&
+						!path.endsWith("jpeg"))){
+					path += ".jpeg";
+				}
+				
+				BufferedImage image = ScreenImage.createImage(pnlChart);
+				try {
+					ScreenImage.writeImage(image, path);
+				} catch (IOException e) {
+					e.printStackTrace();
+					ProgramController.createDialog("There was a problem creating the image.\nAborted!", 
+												   "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+				}
+			}
+		});
+		btnSaveChart.setBounds(177, 222, 121, 16);
+		pnlChart.add(btnSaveChart);
+		
+		btnModifyChart = new JButton("Modify Chart...");
+		btnModifyChart.setBounds(304, 222, 121, 16);
+		pnlChart.add(btnModifyChart);
 		
 		pnlLoading = new JPanel();
 		pnlLoading.setVisible(false);
@@ -434,10 +493,6 @@ public class MetricsStatusWindow extends JFrame {
 	}
 	
 	private void setUpData(){
-		//We hide the loading panel and show the data panel.
-		tabbedPane.setVisible(true);
-		pnlLoading.setVisible(false);
-		
 		//Next we pull data from the calculator.
 		int[] handMotions = calculator.getHandMotions();
 		int[] leftFingerMotions = calculator.getFingerMotions(true);
@@ -467,7 +522,12 @@ public class MetricsStatusWindow extends JFrame {
 		}
 		
 		//Finally, we generate the chart.
-		generateChart(ChartType.MOTION_BAR);
+		generateChart(ChartType.VEL_BAR);
+		
+		//We hide the loading panel and show the data panel.
+		tabbedPane.setVisible(true);
+		pnlLoading.setVisible(false);
+		
 	}
 	
 	private void generateChart(ChartType type) {
@@ -480,7 +540,7 @@ public class MetricsStatusWindow extends JFrame {
 					 								 	"Velocity Per Hand", 	
 	        		 								 "",
 	                 								 type == ChartType.MOTION_BAR ? "# of Motions" :
-	                 									 "Velocity", 
+	                 									 "Average Velocity", 
 	                 								 (CategoryDataset) ds, 
 	                 								 PlotOrientation.VERTICAL, 
 	                 								 true, 
@@ -506,21 +566,31 @@ public class MetricsStatusWindow extends JFrame {
         	//Loops to generate the data.
         	for (int i = 0; i < BAR_CATEGORIES.length - 1; i++){
         		//Gets the data for that hand.
-        		int[] fingers = null;
-        		int[] hands = null;
         		if (type == ChartType.MOTION_BAR){
-        			fingers = calculator.getFingerMotions((i % 2 == 0) ? true : false);
-        			hands = calculator.getHandMotions();
+        			int[] fingers = calculator.getFingerMotions((i % 2 == 0) ? true : false);
+        			int[] hands = calculator.getHandMotions();
+        			
+            		//Loops to get the finger data.
+            		int j;
+            		for (j = 0; j < FINGERS.length - 1; j++){
+            			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
+            		}
+            		
+            		//Adds in the palm.
+            		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
+        		} else {
+        			float[] fingers = calculator.getFingerVelocity((i % 2 == 0) ? true : false);
+        			float[] hands = calculator.getHandVelocity();
+        			
+            		//Loops to get the finger data.
+            		int j;
+            		for (j = 0; j < FINGERS.length - 1; j++){
+            			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
+            		}
+            		
+            		//Adds in the palm.
+            		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
         		}
-        		
-        		//Loops to get the finger data.
-        		int j;
-        		for (j = 0; j < FINGERS.length - 1; j++){
-        			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
-        		}
-        		
-        		//Adds in the palm.
-        		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
         	}
         	
         	//Sets this to be the data.
