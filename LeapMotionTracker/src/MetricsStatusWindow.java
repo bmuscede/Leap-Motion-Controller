@@ -1,6 +1,5 @@
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -13,9 +12,19 @@ import java.awt.Font;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
-
 import javax.swing.ImageIcon;
 import javax.swing.JSeparator;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.ChartFrame;
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.Plot;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.data.category.CategoryDataset;
+import org.jfree.data.general.Dataset;
+import org.jfree.data.general.DatasetUtilities;
+import org.jfree.data.xy.DefaultXYDataset;
+import org.jfree.data.xy.XYDataset;
 
 
 public class MetricsStatusWindow extends JFrame {
@@ -86,6 +95,9 @@ public class MetricsStatusWindow extends JFrame {
 	private JLabel[] RIGHT_INFO_GROUP;
 	private JLabel[] RIGHT_DATA_MOVEMENT_GROUP;
 	
+	private ChartPanel pnlChart;
+	private JFreeChart freeChart;
+
 	/**
 	 * Create the frame.
 	 */
@@ -312,6 +324,11 @@ public class MetricsStatusWindow extends JFrame {
 		
 		JPanel pnlGraph = new JPanel();
 		tabbedPane.addTab("Visualize Data", null, pnlGraph, null);
+		pnlGraph.setLayout(null);
+		
+		pnlChart = new ChartPanel(freeChart);
+		pnlChart.setBounds(10, 11, 419, 221);
+		pnlGraph.add(pnlChart);
 		
 		pnlLoading = new JPanel();
 		pnlLoading.setVisible(false);
@@ -412,8 +429,30 @@ public class MetricsStatusWindow extends JFrame {
 			RIGHT_INFO_GROUP[i].setText(FINGERS[i] + ":");
 			RIGHT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + rightFingerMotions[i]);
 		}
+		
+		//Finally, we generate the chart.
+		generateChart();
 	}
 	
+	private void generateChart() {
+		//Develops the dataset.
+		 XYDataset ds = createDataset();
+         freeChart = ChartFactory.createXYLineChart("Test Chart",
+                 "x", "y", ds, PlotOrientation.VERTICAL, true, true,
+                 false);
+         pnlChart.setChart(freeChart);
+	}
+
+	private XYDataset createDataset() {
+        DefaultXYDataset ds = new DefaultXYDataset();
+
+        double[][] data = { {0.1, 0.2, 0.3}, {1, 2, 3} };
+
+        ds.addSeries("series1", data);
+
+        return ds;
+	}
+
 	public void setUpDataDatabase(Vector<String> values){
 		//We first want to set up the finger data.
 		for (int i = 0; i < 5; i++){
