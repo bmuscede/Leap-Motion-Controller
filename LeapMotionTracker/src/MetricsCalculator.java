@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import com.leapmotion.leap.Controller;
 import com.leapmotion.leap.Finger;
+import com.leapmotion.leap.FingerList;
 import com.leapmotion.leap.Frame;
 import com.leapmotion.leap.Hand;
 import com.leapmotion.leap.HandList;
@@ -429,17 +430,8 @@ public class MetricsCalculator implements Runnable {
 			Frame current = frames.elementAt(i);
 			
 			//Gets the frame to examine.
-			Frame next = null;
-			try{
-				next = frames.elementAt(i + frameExamineValue);
-			} catch (IndexOutOfBoundsException e){
-				next = frames.elementAt(frames.size() - 1);
-				
-				//Checks to make sure we aren't comparing the same frame.
-				if (current.equals(next)){
-					continue;
-				}
-			}
+			Frame next = getNextFrame(i);
+			if (next == null) continue;
 			
 			//Now we see if there are hands.
 			HandList hands = current.hands();
@@ -454,11 +446,12 @@ public class MetricsCalculator implements Runnable {
 				else if (isMotion && currentHand.isRight()) handMotions[1]++;
 				
 				//Next, we loop through each of the fingers.
-				for (int k = 0; k < currentHand.fingers().count(); k++){
-					Finger currentFinger = currentHand.finger(k);
+				FingerList fingers = currentHand.fingers();
+				for (int k = 0; k < fingers.count(); k++){
+					Finger currentFinger = fingers.get(k);
 					
 					//Gets the motion for a specific finger.
-					isMotion = parseFinger(currentFinger, next, currentHand.isLeft());
+					isMotion = parseFinger(currentHand, currentFinger, next, currentHand.isLeft());
 					
 					//Gets the finger motions.
 					if (isMotion && currentHand.isLeft()) 
@@ -472,23 +465,88 @@ public class MetricsCalculator implements Runnable {
 		return handMotions;
 	}
 	
-	private boolean parseFinger(Finger currentFinger, Frame next, boolean left) {
-		//We start by finding the appropriate finger in the next frame.
-		Finger nextFinger = null;
-		for (int i = 0; i < next.hands().count(); i++){
-			if (next.hand(i).isLeft() == left){
-				//We found the correct hand. Now we find the finger.
-				for (int j = 0; j < next.hand(i).fingers().count(); j++){
-					if (next.hand(i).finger(j).type() == currentFinger.type()){
-						nextFinger = next.hand(i).finger(j);
-						break;
-					}
-				}
+	/**
+	 * Gets the next directed frame. Returns
+	 * null on error.
+	 * @currentVal The current frame number.
+	 * @return The next frame.
+	 */
+	private Frame getNextFrame(int currentVal){
+		Frame next = null;
+		
+		try{
+			next = frames.elementAt(currentVal + frameExamineValue);
+		} catch (IndexOutOfBoundsException e){
+			next = frames.elementAt(frames.size() - 1);
+			
+			//Checks to make sure we aren't comparing the same frame.
+			if (frames.elementAt(currentVal).equals(next)){
+				next = null;
 			}
 		}
 		
+		return next;
+	}
+	
+	/**
+	 * Gets the relevant hand of the next frame.
+	 * @param currentHand The current hand being comparedd.
+	 * @param nextFrame The next frame.
+	 * @return The next hand.
+	 */
+	private Hand getNextHand(Hand currentHand, Frame nextFrame){
+		Hand nextHand = null;
+		
+		//First, attempts to locate from ID.
+		nextHand = nextFrame.hand(currentHand.id());
+		if (nextHand.isValid()) return nextHand;
+		
+		//If invalid, the hand changed id's since last update.
+		//Loop to find similar hand.
+		for (int i = 0; i < nextFrame.hands().count(); i++){
+			if (nextFrame.hand(i).isLeft() == currentHand.isLeft()){
+				nextHand = nextFrame.hand(i);
+				break;
+			}
+		}
+		
+		return nextHand;
+	}
+	
+	/**
+	 * This method retrieves the finger of the next frame.
+	 * @param currentFinger The current finger being analyzed.
+	 * @param nextHand The next hand of the finger.
+	 * @return The next finger.
+	 */
+	private Finger getNextFinger(Finger currentFinger, Hand nextHand){
+		Finger nextFinger = null;
+		
+		//Safeguard against null pointer exception.
+		if (nextHand == null || nextHand.isValid() == false) return nextFinger;
+		
+		//First, we try to locate based on the previous finger.
+		nextFinger = nextHand.finger(currentFinger.id());
+		if (nextFinger.isValid()) return nextFinger;
+		
+		//If this doesn't work, we manually locate.
+		for (int i = 0; i < nextHand.fingers().count(); i++){
+			if (nextHand.fingers().get(i).type() == currentFinger.type()){
+				nextFinger = nextHand.fingers().get(i);
+				break;
+			}
+		}
+		
+		return nextFinger;
+	}
+	
+	private boolean parseFinger(Hand currentHand, Finger currentFinger, Frame next, boolean left) {
+		//We start by finding the appropriate finger in the next frame.
+		Hand nextHand = getNextHand(currentHand, next);
+		Finger nextFinger = getNextFinger(currentFinger, nextHand);
+		
 		//See if we found the next finger.
-		if (nextFinger == null) return false;
+		if (nextFinger == null || nextFinger.isValid() == false) return false;
 		
 		//If we have, we now compute the x,y,z diff.
 		float xDiff = Math.abs(currentFinger.tipPosition().getX() 
@@ -509,13 +567,7 @@ public class MetricsCalculator implements Runnable {
 
 	private boolean parseHand(Hand current, Frame next, boolean leftHand){
 		//We start by finding the hand in the next frame.
-		Hand nextHand = null;
-		for (int i = 0; i < next.hands().count(); i++){
-			if (next.hand(i).isLeft() == leftHand){
-				nextHand = next.hand(i);
-				break;
-			}
-		}
+		Hand nextHand = getNextHand(current, next);
 		
 		//See if we couldn't find it.
 		if (nextHand == null) return false;
