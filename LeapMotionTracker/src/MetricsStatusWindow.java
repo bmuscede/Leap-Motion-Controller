@@ -93,6 +93,7 @@ public class MetricsStatusWindow extends JFrame {
 	private JFreeChart freeChart;
 	private JButton btnModifyChart;
 	private JButton btnSaveChart;
+	private ChartDialog chartSetting;
 	
 	//User Variables.
 	private String userName;
@@ -125,11 +126,25 @@ public class MetricsStatusWindow extends JFrame {
 			"Right Hand",
 			"Average"
 	};
+	private boolean[] defaultValues;
+	private int defaultChartType;
+	
+	//Stores intermediate data.
+	private float[] leftMotions;
+	private float[] rightMotions;
+	private float[] leftVelocity;
+	private float[] rightVelocity;
 	
 	/**
 	 * Create the frame.
 	 */
 	public MetricsStatusWindow(String userName, String session) {
+		defaultChartType = 0;
+		defaultValues = new boolean[9];
+		for (int i = 0; i < defaultValues.length; i++){
+			defaultValues[i] = true;
+		}
+		
 		setResizable(false);
 		setType(Type.UTILITY);
 		setTitle("Leap Motion Tracker - [" + userName + " - Session " + session +"]");
@@ -356,11 +371,44 @@ public class MetricsStatusWindow extends JFrame {
 		pnlGraph.setLayout(null);
 		
 		pnlChart = new ChartPanel(freeChart);
-		pnlChart.setBounds(0, 0, 439, 243);
+		pnlChart.setBounds(0, 0, 439, 218);
 		pnlGraph.add(pnlChart);
 		pnlChart.setLayout(null);
 		
 		btnSaveChart = new JButton("Save Chart...");
+		btnSaveChart.setBounds(8, 222, 121, 16);
+		pnlGraph.add(btnSaveChart);
+		
+		btnModifyChart = new JButton("Modify Chart...");
+		btnModifyChart.setBounds(308, 222, 121, 16);
+		pnlGraph.add(btnModifyChart);
+		btnModifyChart.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//We first need to call the chart dialog.
+				chartSetting = new ChartDialog();
+				
+				//Sets the default values.
+				chartSetting.setValues(defaultChartType, defaultValues);
+			
+				chartSetting.setModal(true);
+				chartSetting.setAutoRequestFocus(true);
+				chartSetting.setVisible(true);
+
+				//Check the return code.
+				if (chartSetting.getReturnCode() != 1)
+					return;
+				
+				//Now we obtain values.
+				int chartType = chartSetting.getSelectedChart();
+				boolean[] values = chartSetting.getSelectedValues();
+				
+				defaultChartType = chartType;
+				defaultValues = values;
+				
+				//Call the redraw method.
+				generateChart(ChartType.values()[chartType], values);
+			}
+		});
 		btnSaveChart.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				//Prompts the user for a save file.
@@ -395,14 +443,12 @@ public class MetricsStatusWindow extends JFrame {
 					ProgramController.createDialog("There was a problem creating the image.\nAborted!", 
 												   "Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
 				}
+				
+				//Notifies of success.
+				ProgramController.createDialog("Success!\nFile saved as\n" + path, 
+						"Leap Motion Tracker", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
-		btnSaveChart.setBounds(177, 222, 121, 16);
-		pnlChart.add(btnSaveChart);
-		
-		btnModifyChart = new JButton("Modify Chart...");
-		btnModifyChart.setBounds(304, 222, 121, 16);
-		pnlChart.add(btnModifyChart);
 		
 		pnlLoading = new JPanel();
 		pnlLoading.setVisible(false);
@@ -492,6 +538,70 @@ public class MetricsStatusWindow extends JFrame {
 		calcTimer.schedule(new Tick(), 1000, 1000);
 	}
 	
+	private void generateChart(ChartType type, boolean[] data) {
+		//Develops the dataset.
+		 Dataset ds = createDataset(type, data);
+		 
+		 //Creates general chart look and feel.
+		 if (type == ChartType.MOTION_BAR || type == ChartType.VEL_BAR){
+	         freeChart = ChartFactory.createBarChart(type == ChartType.MOTION_BAR ? "Hand Motions Per Hand" :
+					 								 	"Velocity Per Hand", 	
+	        		 								 "",
+	                 								 type == ChartType.MOTION_BAR ? "# of Motions" :
+	                 									 "Average Velocity", 
+	                 								 (CategoryDataset) ds, 
+	                 								 PlotOrientation.VERTICAL, 
+	                 								 true, 
+	                 								 true,
+	                 								 false);
+		 } else {
+			 
+		 }
+         
+         //Redraws the chart.
+		 freeChart.setBackgroundPaint(pnlLoading.getBackground());
+         pnlChart.setChart(freeChart);
+	}
+
+	private Dataset createDataset(ChartType type, boolean[] values) {
+		//Creates a new dataset.
+		Dataset data = null;
+
+        //Determines what type of dataset is created.
+        if (type == ChartType.VEL_BAR || type == ChartType.MOTION_BAR){
+        	DefaultCategoryDataset ds = new DefaultCategoryDataset();
+        	
+        	//Loops to generate the data.
+        	for (int i = 0; i < BAR_CATEGORIES.length - 1; i++){
+        		//Skip the category if not selected.
+        		if (values[i] == false) continue;
+        		
+        		int j;
+        		for (j = 0; j < FINGERS.length; j++){
+        			//We look to see if we skip our current value.
+        			if (values[j + 3] == false) continue;
+        			
+        			if (type == ChartType.MOTION_BAR)
+        				ds.addValue((i == 0) ? leftMotions[j] : rightMotions[j] , FINGERS[j], BAR_CATEGORIES[i]);
+        			else
+        				ds.addValue((i == 0) ? leftVelocity[j] : rightVelocity[j] , FINGERS[j], BAR_CATEGORIES[i]);
+        		}
+        	}
+        	
+        	//Sets this to be the data.
+        	data = ds;
+        } else {
+        	//We need to start by generating the data.    		
+        	if (type == ChartType.MOTION_LNE){        		
+        		
+        	} else {
+        		
+        	}
+        }
+        
+        return data;
+	}
+
 	private void setUpData(){
 		//Next we pull data from the calculator.
 		int[] handMotions = calculator.getHandMotions();
@@ -521,8 +631,11 @@ public class MetricsStatusWindow extends JFrame {
 			RIGHT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + rightFingerVelocity[i]);
 		}
 		
+		//Store the data values.
+		storeDataValues();
+		
 		//Finally, we generate the chart.
-		generateChart(ChartType.VEL_BAR);
+		generateChart(ChartType.MOTION_BAR, defaultValues);
 		
 		//We hide the loading panel and show the data panel.
 		tabbedPane.setVisible(true);
@@ -530,104 +643,80 @@ public class MetricsStatusWindow extends JFrame {
 		
 	}
 	
-	private void generateChart(ChartType type) {
-		//Develops the dataset.
-		 Dataset ds = createDataset(type);
-		 
-		 //Creates general chart look and feel.
-		 if (type == ChartType.MOTION_BAR || type == ChartType.VEL_BAR){
-	         freeChart = ChartFactory.createBarChart(type == ChartType.MOTION_BAR ? "Hand Motions Per Hand" :
-					 								 	"Velocity Per Hand", 	
-	        		 								 "",
-	                 								 type == ChartType.MOTION_BAR ? "# of Motions" :
-	                 									 "Average Velocity", 
-	                 								 (CategoryDataset) ds, 
-	                 								 PlotOrientation.VERTICAL, 
-	                 								 true, 
-	                 								 true,
-	                 								 false);
-		 } else {
-			 
-		 }
-         
-         //Redraws the chart.
-		 freeChart.setBackgroundPaint(pnlLoading.getBackground());
-         pnlChart.setChart(freeChart);
-	}
-
-	private Dataset createDataset(ChartType type) {
-		//Creates a new dataset.
-		Dataset data = null;
-
-        //Determines what type of dataset is created.
-        if (type == ChartType.VEL_BAR || type == ChartType.MOTION_BAR){
-        	DefaultCategoryDataset ds = new DefaultCategoryDataset();
-        	
-        	//Loops to generate the data.
-        	for (int i = 0; i < BAR_CATEGORIES.length - 1; i++){
-        		//Gets the data for that hand.
-        		if (type == ChartType.MOTION_BAR){
-        			int[] fingers = calculator.getFingerMotions((i % 2 == 0) ? true : false);
-        			int[] hands = calculator.getHandMotions();
-        			
-            		//Loops to get the finger data.
-            		int j;
-            		for (j = 0; j < FINGERS.length - 1; j++){
-            			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
-            		}
-            		
-            		//Adds in the palm.
-            		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
-        		} else {
-        			float[] fingers = calculator.getFingerVelocity((i % 2 == 0) ? true : false);
-        			float[] hands = calculator.getHandVelocity();
-        			
-            		//Loops to get the finger data.
-            		int j;
-            		for (j = 0; j < FINGERS.length - 1; j++){
-            			ds.addValue(fingers[j], FINGERS[j], BAR_CATEGORIES[i]);
-            		}
-            		
-            		//Adds in the palm.
-            		ds.addValue(hands[i], FINGERS[j], BAR_CATEGORIES[i]);
-        		}
-        	}
-        	
-        	//Sets this to be the data.
-        	data = ds;
-        } else {
-        	//We need to start by generating the data.    		
-        	if (type == ChartType.MOTION_LNE){        		
-        		
-        	} else {
-        		
-        	}
-        }
-        
-        return data;
-	}
-
 	public void setUpDataDatabase(Vector<String> values){
 		//We first want to set up the finger data.
 		for (int i = 0; i < 5; i++){
 			LEFT_INFO_GROUP[i].setText(FINGERS[i] + ":");
 			LEFT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 2));
+			LEFT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 14));
 			RIGHT_INFO_GROUP[i].setText(FINGERS[i] + ":");
 			RIGHT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 8));
+			RIGHT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 20));
 		}
 		
 		//Next we add the hand values first.
 		lblLeftMoveData.setText(values.elementAt(1));
+		lblLeftVelocityData.setText(values.elementAt(13));
 		lblRightMoveData.setText(values.elementAt(7));
+		lblRightVelocityData.setText(values.elementAt(19));
+		
+		//We store the data values.
+		storeDataValues(values);
 		
 		//Finally, we generate the chart.
-		generateChart(ChartType.MOTION_BAR);
+		generateChart(ChartType.MOTION_BAR, defaultValues);
 		
 		//We hide the loading panel and show the data panel.
 		tabbedPane.setVisible(true);
 		pnlLoading.setVisible(false);
 	}
 	
+	private void storeDataValues(Vector<String> values) {
+		leftMotions = new float[6];
+		rightMotions = new float[6];
+		leftVelocity = new float[6];
+		rightVelocity = new float[6];
+		
+		//Stores the data.
+		for (int i = 0; i < leftMotions.length - 1; i++){
+			leftMotions[i] = Float.parseFloat(values.elementAt(i + 2));
+			rightMotions[i] = Float.parseFloat(values.elementAt(i + 8));
+			leftVelocity[i] = Float.parseFloat(values.elementAt(i + 14));
+			rightVelocity[i] = Float.parseFloat(values.elementAt(i + 20));			
+		}
+		leftMotions[5] = Float.parseFloat(values.elementAt(1));
+		rightMotions[5] = Float.parseFloat(values.elementAt(7));
+		leftVelocity[5] = Float.parseFloat(values.elementAt(14));
+		rightVelocity[5] = Float.parseFloat(values.elementAt(19));
+	}
+	private void storeDataValues(){
+		leftMotions = new float[6];
+		rightMotions = new float[6];
+		leftVelocity = new float[6];
+		rightVelocity = new float[6];
+		
+		//Does the palm motion data.
+		int[] intermediate = calculator.getHandMotions();
+		leftMotions[5] = intermediate[0];
+		rightMotions[5] = intermediate[1];
+		
+		//Now does the finger motion data.
+		intermediate = calculator.getFingerMotions(true);
+		int[] rightIntermediate = calculator.getFingerMotions(false);
+		for (int i = 0; i < intermediate.length; i++){
+			leftMotions[i] = intermediate[i];
+			rightMotions[i] = rightIntermediate[i];
+		}
+		
+		//Does the velocity.
+		leftVelocity[5] = calculator.getHandVelocity()[0];
+		rightVelocity[5] = calculator.getHandVelocity()[1];
+		for (int i = 0; i < calculator.getFingerVelocity(true).length; i++){
+			leftVelocity[i] = calculator.getFingerVelocity(true)[i];
+			rightVelocity[i] = calculator.getFingerVelocity(false)[i];
+		}
+	}
+
 	class Tick extends TimerTask {
         public void run() {
         	//We check for data from the calculator.

@@ -428,20 +428,19 @@ public class DatabaseController extends Thread {
 	 * @param computedRightMotions The computed right hand motion.
 	 */
 	public void writeMetrics(String userName, String sessionID,
-			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions) {
+			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions,
+			float[] computedHandVelocity, float[] computedLeftVelocity, float[] computedRightVelocity) {
 		//We first check for an insert or update.
 		String checkID = checkForMetricID(userName, sessionID);
 		if (checkID != null) {
 			updateMetrics(userName, sessionID, checkID, 
-					computedHandMotions, computedLeftMotions, computedRightMotions);
+					computedHandMotions, computedLeftMotions, computedRightMotions,
+					computedHandVelocity, computedLeftVelocity, computedRightVelocity);
 			return;
 		}
 		
 		//We first need to generate our SQL statement.
-		String sql = "INSERT INTO SessionMetrics(MetricID, LeftMotions, LeftThumbMotions, " +
-				"LeftIndexMotions, LeftMiddleMotions, LeftRingMotions, LeftPinkyMotions, " +
-				"RightMotions, RightThumbMotions, RightIndexMotions, RightMiddleMotions, " +
-				"RightRingMotions, RightPinkyMotions) VALUES(null, " + 
+		String sql = "INSERT INTO SessionMetrics VALUES(null, " + 
 				computedHandMotions[0] + ", " + 
 				computedLeftMotions[0] + ", " + 
 				computedLeftMotions[1] + ", " + 
@@ -453,7 +452,19 @@ public class DatabaseController extends Thread {
 				computedRightMotions[1] + ", " + 
 				computedRightMotions[2] + ", " + 
 				computedRightMotions[3] + ", " + 
-				computedRightMotions[4] + ");";
+				computedRightMotions[4] + ", " +
+				computedHandVelocity[0] + ", " + 
+				computedLeftVelocity[0] + ", " + 
+				computedLeftVelocity[1] + ", " + 
+				computedLeftVelocity[2] + ", " + 
+				computedLeftVelocity[3] + ", " + 
+				computedLeftVelocity[4] + ", " + 
+				computedHandVelocity[1] + ", " + 
+				computedRightVelocity[0] + ", " + 
+				computedRightVelocity[1] + ", " + 
+				computedRightVelocity[2] + ", " + 
+				computedRightVelocity[3] + ", " + 
+				computedRightVelocity[4] + ");";
 		
 		//Executes the generated SQL statement.
 		try {
@@ -511,7 +522,8 @@ public class DatabaseController extends Thread {
 	 * @param computedRightMotions The right hand motions
 	 */
 	private void updateMetrics(String userName, String session, String metricID,
-			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions){
+			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions,
+			float[] computedHandVelocity, float[] computedLeftVelocity, float[] computedRightVelocity){
 		//We generate our SQL
 		String sql = "UPDATE SessionMetrics SET " +
 				"LeftMotions = " + computedHandMotions[0] + ", " +
@@ -525,7 +537,19 @@ public class DatabaseController extends Thread {
 				"RightIndexMotions = " + computedRightMotions[1] + ", " +
 				"RightMiddleMotions = " + computedRightMotions[2] + ", " +
 				"RightRingMotions = " + computedRightMotions[3] + ", " +
-				"RightPinkyMotions = " + computedRightMotions[4] +
+				"RightPinkyMotions = " + computedRightMotions[4] + ", " +
+				"LeftVelocity = " + computedHandVelocity[0] + ", " +
+				"LeftThumbVelocity = " + computedLeftVelocity[0] + ", " +
+				"LeftIndexVelocity = " + computedLeftVelocity[1] + ", " +
+				"LeftMiddleVelocity = " + computedLeftVelocity[2] + ", " +
+				"LeftRingVelocity = " + computedLeftVelocity[3] + ", " +
+				"LeftPinkyVelocity = " + computedLeftVelocity[4] + ", " +
+				"RightVelocity = " + computedHandVelocity[1] + ", " +
+				"RightThumbVelocity = " + computedRightVelocity[0] + ", " +
+				"RightIndexVelocity = " + computedRightVelocity[1] + ", " +
+				"RightMiddleVelocity = " + computedRightVelocity[2] + ", " +
+				"RightRingVelocity = " + computedRightVelocity[3] + ", " +
+				"RightPinkyVelocity = " + computedRightVelocity[4] +
 				" WHERE MetricID = " + metricID + ";";
 		
 		//Executes the generated SQL statement.

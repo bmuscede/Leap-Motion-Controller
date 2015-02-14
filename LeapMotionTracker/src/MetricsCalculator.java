@@ -246,7 +246,8 @@ public class MetricsCalculator implements Runnable {
 		
 		//Writes to database.
 		db.writeMetrics(userName, sessionID, 
-						computedHandMotions, computedLeftMotions, computedRightMotions);
+						computedHandMotions, computedLeftMotions, computedRightMotions,
+						computedHandVel, computedLeftVel, computedRightVel);
 		
 		//States that the program is done.
 		done = true;
