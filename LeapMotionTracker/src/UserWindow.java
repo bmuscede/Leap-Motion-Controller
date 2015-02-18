@@ -30,6 +30,7 @@ public class UserWindow extends JFrame implements ActionListener {
 	private JButton btnPlayback;
 	private JLabel lblNoUsers;
 	private JCheckBox chkLimited;
+	private JButton btnSkillLevels;
 	
 	/**
 	 * Create the frame.
@@ -128,17 +129,17 @@ public class UserWindow extends JFrame implements ActionListener {
 		JLabel lblProgramOptions = new JLabel("Program Options:");
 		lblProgramOptions.setHorizontalAlignment(SwingConstants.LEFT);
 		lblProgramOptions.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		lblProgramOptions.setBounds(10, 255, 147, 39);
+		lblProgramOptions.setBounds(10, 244, 147, 52);
 		contentPane.add(lblProgramOptions);
 		
 		chkLimited = new JCheckBox("Start Program in Limited Mode");
-		chkLimited.setBounds(157, 250, 322, 23);
+		chkLimited.setBounds(149, 248, 229, 23);
 		contentPane.add(chkLimited);
 		
-		JCheckBox chkPermaSignIn = new JCheckBox("Always Sign in With Selected Profile");
-		chkPermaSignIn.setEnabled(false);
-		chkPermaSignIn.setBounds(157, 275, 322, 23);
-		contentPane.add(chkPermaSignIn);
+		btnSkillLevels = new JButton("Manage Skill Levels...");
+		btnSkillLevels.addActionListener(this);
+		btnSkillLevels.setBounds(153, 274, 165, 23);
+		contentPane.add(btnSkillLevels);
 		
 		//Refresh the menu.
 		refreshTable();
@@ -154,7 +155,14 @@ public class UserWindow extends JFrame implements ActionListener {
 			createNewUser();
 		} else if (event.getSource().equals(btnDelete)){
 			deleteSelectedUser();
+		} else if (event.getSource().equals(btnSkillLevels)){
+			openSkillLevelDialog();
 		}
+	}
+
+	private void openSkillLevelDialog() {
+		SkillLevelDialog skillLevels = new SkillLevelDialog();
+		skillLevels.setVisible(true);	
 	}
 
 	private void playbackHandler() {

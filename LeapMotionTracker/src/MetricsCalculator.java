@@ -23,6 +23,7 @@ public class MetricsCalculator implements Runnable {
 	private final int DEFAULT_CONFIDENCE = 0;
 	private final int DEFAULT_EXAMINE_VAL = 1;
 	private final int DEFAULT_SENSITIVITY = 3;
+	private final float DEFAULT_VEL_IGNORE = 0;
 	
 	//Calculation Constants.
 	private final int LEFT_HAND_OFFSET = 2;
@@ -34,12 +35,14 @@ public class MetricsCalculator implements Runnable {
 	private int confidenceRemove;
 	private int frameExamineValue;
 	private int sensitivityValue;
+	private float velocityIgnoreValue;
 	
 	//Informational objects.
 	private String userName;
 	private String sessionID;
 	private Vector<Frame> frames;
 	private boolean done;
+	private String skillLevel;
 	
 	//Final Computed data.
 	private int[] computedHandMotions;
@@ -72,6 +75,10 @@ public class MetricsCalculator implements Runnable {
 		confidenceRemove = DEFAULT_CONFIDENCE;
 		frameExamineValue = DEFAULT_EXAMINE_VAL;
 		sensitivityValue = DEFAULT_SENSITIVITY;
+		velocityIgnoreValue = DEFAULT_VEL_IGNORE;
+		
+		//Sets the skill level to null.
+		skillLevel = null;
 		
 		//Sets the corresponding user id and session.
 		this.userName = userName;
@@ -142,6 +149,24 @@ public class MetricsCalculator implements Runnable {
 	}
 	
 	/**
+	 * Sets the value for which velocities below this
+	 * value will not be considered. If 0 is the value
+	 * then all values will be considered.
+	 * @param newIgnoreVal The new value to ignore
+	 */
+	public void setVelocityIgnoreValue(float newIgnoreVal){
+		velocityIgnoreValue = newIgnoreVal;
+	}
+	
+	/**
+	 * Sets the selected skill level for the 
+	 * metrics values.
+	 */
+	public void setSkillLevel(String sValue){
+		skillLevel = sValue;
+	}
+	
+	/**
 	 * Notifies whether the hand motion computations
 	 * are done or not.
 	 * @return Whether the calculations are done.
@@ -209,6 +234,14 @@ public class MetricsCalculator implements Runnable {
 	}
 	
 	/**
+	 * Simply returns the reported skill level.
+	 * @return The skill level reported.
+	 */
+	public String getSkillLevel(){
+		return skillLevel;
+	}
+	
+	/**
 	 * Starts a new thread. This ensures only one thread
 	 * is running at a time.
 	 */
@@ -245,7 +278,7 @@ public class MetricsCalculator implements Runnable {
 		storeVelocity(velocity);
 		
 		//Writes to database.
-		db.writeMetrics(userName, sessionID, 
+		db.writeMetrics(userName, sessionID, skillLevel,
 						computedHandMotions, computedLeftMotions, computedRightMotions,
 						computedHandVel, computedLeftVel, computedRightVel);
 		
@@ -275,7 +308,11 @@ public class MetricsCalculator implements Runnable {
 				
 				//We get the palm average.
 				float currVel = hand.palmVelocity().magnitude();
-				if (hand.isLeft()){
+				
+				//Skip if it falls below ignore system.
+				if (currVel < velocityIgnoreValue) continue;
+				
+				if (hand.isLeft()){		
 					//Compute the running average.
 					velocity[0] += currVel;
 					setSize[0]++;
@@ -293,6 +330,7 @@ public class MetricsCalculator implements Runnable {
 					
 					//First, we get the palm average.
 					currVel = finger.tipVelocity().magnitude();
+					if (currVel < velocityIgnoreValue) continue;
 					
 					//Now we need to figure out what to associate it with.
 					int pos = 0;

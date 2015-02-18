@@ -24,6 +24,7 @@ CREATE TABLE Session(
 	
 CREATE TABLE SessionMetrics(
 	MetricID INTEGER PRIMARY KEY AUTOINCREMENT,
+	SkillID INT,
 	LeftMotions INT,
 	LeftThumbMotions INT,
 	LeftIndexMotions INT,
@@ -47,5 +48,47 @@ CREATE TABLE SessionMetrics(
 	RightIndexVelocity REAL,
 	RightMiddleVelocity REAL,
 	RightRingVelocity REAL,
-	RightPinkyVelocity REAL
+	RightPinkyVelocity REAL,
+	FOREIGN KEY (SkillID)
+		REFERENCES SkillLevel(SkillID)
+			ON DELETE SET DEFAULT
+			ON UPDATE CASCADE
+	);
+	
+CREATE TABLE SkillLevel(
+	SkillID INTEGER PRIMARY KEY AUTOINCREMENT,
+	SkillName VARCHAR(30) UNIQUE,
+	SkillVal INT
+	);
+	
+CREATE TABLE MetricAverage(
+	SkillID INTEGER PRIMARY KEY,
+	LeftMotions INT,
+	LeftThumbMotions INT,
+	LeftIndexMotions INT,
+	LeftMiddleMotions INT,
+	LeftRingMotions INT,
+	LeftPinkyMotions INT,
+	RightMotions INT,
+	RightThumbMotions INT,
+	RightIndexMotions INT,
+	RightMiddleMotions INT,
+	RightRingMotions INT,
+	RightPinkyMotions INT,
+	LeftVelocity REAL,
+	LeftThumbVelocity REAL,
+	LeftIndexVelocity REAL,
+	LeftMiddleVelocity REAL,
+	LeftRingVelocity REAL,
+	LeftPinkyVelocity REAL,
+	RightVelocity REAL,
+	RightThumbVelocity REAL,
+	RightIndexVelocity REAL,
+	RightMiddleVelocity REAL,
+	RightRingVelocity REAL,
+	RightPinkyVelocity REAL,
+	FOREIGN KEY (SkillID)
+		REFERENCES SkillLevel(SkillID)
+			ON DELETE CASCADE
+			ON UPDATE CASCADE
 	);

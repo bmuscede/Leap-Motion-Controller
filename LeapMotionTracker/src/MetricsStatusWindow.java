@@ -134,6 +134,10 @@ public class MetricsStatusWindow extends JFrame {
 	private float[] rightMotions;
 	private float[] leftVelocity;
 	private float[] rightVelocity;
+	private JPanel pnlScore;
+	private JLabel lblReported;
+	private JSeparator separator_2;
+	private JLabel lblMetrics;
 	
 	/**
 	 * Create the frame.
@@ -158,6 +162,24 @@ public class MetricsStatusWindow extends JFrame {
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setBounds(0, 0, 444, 271);
 		contentPane.add(tabbedPane);
+		
+		pnlScore = new JPanel();
+		tabbedPane.addTab("Score\r\n", null, pnlScore, null);
+		pnlScore.setLayout(null);
+		
+		lblReported = new JLabel("<html><strong>Reported Skill Level:</strong>");
+		lblReported.setBounds(10, 11, 419, 14);
+		pnlScore.add(lblReported);
+		
+		separator_2 = new JSeparator();
+		separator_2.setBounds(10, 36, 419, 2);
+		pnlScore.add(separator_2);
+		
+		lblMetrics = new JLabel("<html><center>Your metrics are [NUM]% [better/worse] than your skill level's average.</center></html>");
+		lblMetrics.setFont(new Font("Tahoma", Font.PLAIN, 16));
+		lblMetrics.setHorizontalAlignment(SwingConstants.CENTER);
+		lblMetrics.setBounds(10, 79, 419, 40);
+		pnlScore.add(lblMetrics);
 		
 		JPanel pnlLeft = new JPanel();
 		tabbedPane.addTab("Left Hand Data", null, pnlLeft, null);
@@ -603,6 +625,9 @@ public class MetricsStatusWindow extends JFrame {
 	}
 
 	private void setUpData(){
+		//We pull the category from the calculator.
+		lblReported.setText(lblReported.getText() + " <i>" + calculator.getSkillLevel() + "</i></html>");
+		
 		//Next we pull data from the calculator.
 		int[] handMotions = calculator.getHandMotions();
 		int[] leftFingerMotions = calculator.getFingerMotions(true);
@@ -644,21 +669,25 @@ public class MetricsStatusWindow extends JFrame {
 	}
 	
 	public void setUpDataDatabase(Vector<String> values){
+		//Get the skill level from the database.
+		lblReported.setText(lblReported.getText() + " <i>" + 
+				ProgramController.database.getSkillLevelName(values.elementAt(1)) + "</i></html>");
+		
 		//We first want to set up the finger data.
 		for (int i = 0; i < 5; i++){
 			LEFT_INFO_GROUP[i].setText(FINGERS[i] + ":");
-			LEFT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 2));
-			LEFT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 14));
+			LEFT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 3));
+			LEFT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 15));
 			RIGHT_INFO_GROUP[i].setText(FINGERS[i] + ":");
-			RIGHT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 8));
-			RIGHT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 20));
+			RIGHT_DATA_MOVEMENT_GROUP[i].setText("Movements: " + values.elementAt(i + 9));
+			RIGHT_DATA_VELOCITY_GROUP[i].setText("Velocity: " + values.elementAt(i + 21));
 		}
 		
 		//Next we add the hand values first.
-		lblLeftMoveData.setText(values.elementAt(1));
-		lblLeftVelocityData.setText(values.elementAt(13));
-		lblRightMoveData.setText(values.elementAt(7));
-		lblRightVelocityData.setText(values.elementAt(19));
+		lblLeftMoveData.setText(values.elementAt(2));
+		lblLeftVelocityData.setText(values.elementAt(14));
+		lblRightMoveData.setText(values.elementAt(8));
+		lblRightVelocityData.setText(values.elementAt(20));
 		
 		//We store the data values.
 		storeDataValues(values);

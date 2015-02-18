@@ -11,12 +11,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.Vector;
 
 import javax.swing.JCheckBox;
 import javax.swing.border.TitledBorder;
 import javax.swing.UIManager;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.JComboBox;
 
 public class MetricSettingsWindow extends JDialog implements ItemListener, ActionListener {
 	private static final long serialVersionUID = 3522834592795748276L;
@@ -40,17 +42,33 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 	private String session;
 	private JTextField txtFrameOrder;
 	private JTextField txtSensitivity;
+	private JCheckBox chkVelocity;
+	private JLabel lblVelIgnore;
+	private JTextField txtVelIgnore;
+	private JLabel lblSkillLevel;
+	private JComboBox cmbSkillLevels;
+	public boolean booleanError = false;
 	
 	/**
 	 * Create the dialog.
 	 */
 	public MetricSettingsWindow(String userName, String session) {
+		//Gets skill levels.
+		Vector<String> skill = ProgramController.database.getSkillLevels();
+		if (skill.isEmpty()){
+			ProgramController.createDialog("<html>Error! No skill levels are in database.<br>" +
+					"Please create skill levels before metrics can be computed.</html>", "Leap Motion Tracker",
+					JOptionPane.ERROR_MESSAGE);
+			booleanError = true;
+			return;
+		}
+		
 		//Saves to a global variable.
 		this.userName = userName;
 		this.session = session;
 	
 		setTitle("Leap Motion Tracker - [Metric Settings]");
-		setBounds(100, 100, 450, 300);
+		setBounds(100, 100, 450, 338);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
@@ -109,7 +127,7 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 		JPanel pnlProcessing = new JPanel();
 		pnlProcessing.setLayout(null);
 		pnlProcessing.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), "Processing Options", TitledBorder.LEADING, TitledBorder.TOP, null, null));
-		pnlProcessing.setBounds(10, 136, 414, 81);
+		pnlProcessing.setBounds(10, 136, 414, 102);
 		contentPanel.add(pnlProcessing);
 		
 		chkObserve = new JCheckBox("Analyze Select Frames");
@@ -150,6 +168,30 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 		pnlProcessing.add(txtSensitivity);
 		txtSensitivity.setVisible(false);
 		txtSensitivity.setColumns(10);
+		
+		chkVelocity = new JCheckBox("Ignore Certain Velocities");
+		chkVelocity.setBounds(6, 72, 193, 23);
+		pnlProcessing.add(chkVelocity);
+		
+		lblVelIgnore = new JLabel("Ignore Under:");
+		lblVelIgnore.setHorizontalAlignment(SwingConstants.RIGHT);
+		lblVelIgnore.setBounds(205, 76, 91, 14);
+		lblVelIgnore.setVisible(false);
+		pnlProcessing.add(lblVelIgnore);
+		
+		txtVelIgnore = new JTextField();
+		txtVelIgnore.setBounds(306, 73, 98, 20);
+		pnlProcessing.add(txtVelIgnore);
+		txtVelIgnore.setVisible(false);
+		txtVelIgnore.setColumns(10);
+		
+		lblSkillLevel = new JLabel("Skill Level:");
+		lblSkillLevel.setBounds(12, 245, 64, 14);
+		contentPanel.add(lblSkillLevel);
+		
+		cmbSkillLevels = new JComboBox(skill.toArray());
+		cmbSkillLevels.setBounds(81, 242, 167, 20);
+		contentPanel.add(cmbSkillLevels);
 		{
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -217,6 +259,15 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 				lblSensitivity.setVisible(false);
 				txtSensitivity.setVisible(false);
 			}
+		} else if (source == chkVelocity){
+			//We hide the options for it.
+			if (chkVelocity.isSelected()){
+				lblVelIgnore.setVisible(true);
+				txtVelIgnore.setVisible(true);
+			} else {
+				lblVelIgnore.setVisible(false);
+				txtVelIgnore.setVisible(false);
+			}
 		}
 	}
 
@@ -238,6 +289,7 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 		int confidenceLevel = 0;
 		int frameOrder = 0;
 		int sensitivityValue = 0;
+		float velocityIgnore = 0;
 		
 		//We first look at the smoothening.
 		boolean smoothening = chkPerform.isSelected();
@@ -316,8 +368,30 @@ public class MetricSettingsWindow extends JDialog implements ItemListener, Actio
 			}
 		}
 		
+		//Next we look at the velocity value.
+		boolean velocity = chkVelocity.isSelected();
+		
+		if (velocity){
+			//We get the velocity ignore value.
+			try{
+				velocityIgnore = Float.parseFloat(txtVelIgnore.getText());
+			
+				//Check for valid number.
+				if (velocityIgnore < 0) throw new NumberFormatException();
+			} catch (NumberFormatException e){
+				//There was an error with the value.
+				ProgramController.createDialog("<html>The velocity ignore value must be a number greater than 0!" +
+						"<br>Please correct this value.</html>", 
+						"Leap Motion Tracker", JOptionPane.ERROR_MESSAGE);
+				return;
+			}
+		}
+		
+		//Next, we get the selected value.
+		String skillLevel = (String) cmbSkillLevels.getSelectedItem();
+		
 		//Finally, we send all data to the ProgramController.
-		ProgramController.computeMetrics(userName, session, smoothening, confidence, observe, sensitivity,
-				smootheningWindowSize, confidenceLevel, frameOrder, sensitivityValue);
+		ProgramController.computeMetrics(userName, session, smoothening, confidence, observe, sensitivity, velocity,
+				smootheningWindowSize, confidenceLevel, frameOrder, sensitivityValue, velocityIgnore, skillLevel);
 	}
 }

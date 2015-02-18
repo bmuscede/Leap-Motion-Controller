@@ -248,12 +248,19 @@ public class ProgramController {
 	public static void showMetrics(String userName, String session) {
 		window = new MetricSettingsWindow(userName, session);
 		window.setModal(true);
+		
+		if (window.booleanError == true){
+			window = null;
+			return;
+		}
+		
 		window.setVisible(true);
 	}
 	
 	public static void computeMetrics(String userName, String session,
 			boolean smoothening, boolean confidence, boolean observe, boolean sensitivity, 
-			int smootheningVal, int confidenceVal, int frameOrder, int sensitivityValue){
+			boolean velocity, int smootheningVal, int confidenceVal, int frameOrder, int sensitivityValue,
+			float velocityVal, String skillLevel){
 		//We create a new metrics object.
 		MetricsCalculator calculate = new MetricsCalculator(userName, session);
 		
@@ -269,6 +276,13 @@ public class ProgramController {
 		if (sensitivity){
 			calculate.setSensitivityValue(sensitivityValue);
 		}
+		if (velocity){
+			calculate.setVelocityIgnoreValue(velocityVal);
+		}
+		
+		//Sets the skill level.
+		calculate.setSkillLevel(skillLevel);
+		
 		//Finally, we start the calculations.
 		calculate.start();
 		

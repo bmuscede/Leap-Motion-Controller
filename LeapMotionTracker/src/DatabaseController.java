@@ -427,13 +427,16 @@ public class DatabaseController extends Thread {
 	 * @param computedLeftMotions The computed left hand motion.
 	 * @param computedRightMotions The computed right hand motion.
 	 */
-	public void writeMetrics(String userName, String sessionID,
+	public void writeMetrics(String userName, String sessionID, String skillLevel,
 			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions,
 			float[] computedHandVelocity, float[] computedLeftVelocity, float[] computedRightVelocity) {
+		//We get the skill level id.
+		int skillLevelID = getSkillLevelID(skillLevel);
+		
 		//We first check for an insert or update.
 		String checkID = checkForMetricID(userName, sessionID);
 		if (checkID != null) {
-			updateMetrics(userName, sessionID, checkID, 
+			updateMetrics(userName, sessionID, checkID, skillLevelID,
 					computedHandMotions, computedLeftMotions, computedRightMotions,
 					computedHandVelocity, computedLeftVelocity, computedRightVelocity);
 			return;
@@ -441,6 +444,7 @@ public class DatabaseController extends Thread {
 		
 		//We first need to generate our SQL statement.
 		String sql = "INSERT INTO SessionMetrics VALUES(null, " + 
+				skillLevelID + ", " +
 				computedHandMotions[0] + ", " + 
 				computedLeftMotions[0] + ", " + 
 				computedLeftMotions[1] + ", " + 
@@ -510,7 +514,7 @@ public class DatabaseController extends Thread {
 			return;
 		}
 	}
-	
+
 	/**
 	 * This helper function executes an update if there is already
 	 * data metrics computed. That's all it does.
@@ -521,11 +525,12 @@ public class DatabaseController extends Thread {
 	 * @param computedLeftMotions The left hand motions
 	 * @param computedRightMotions The right hand motions
 	 */
-	private void updateMetrics(String userName, String session, String metricID,
+	private void updateMetrics(String userName, String session, String metricID, int skillID,
 			int[] computedHandMotions, int[] computedLeftMotions, int[] computedRightMotions,
 			float[] computedHandVelocity, float[] computedLeftVelocity, float[] computedRightVelocity){
 		//We generate our SQL
 		String sql = "UPDATE SessionMetrics SET " +
+				"SkillID = " + skillID + ", " + 
 				"LeftMotions = " + computedHandMotions[0] + ", " +
 				"LeftThumbMotions = " + computedLeftMotions[0] + ", " +
 				"LeftIndexMotions = " + computedLeftMotions[1] + ", " +
@@ -562,4 +567,170 @@ public class DatabaseController extends Thread {
 			return;
 		}
 	}
+
+	public Vector<String> getSkillLevels() {
+		//Creates the SQL statement.
+		String sql = "SELECT SkillName FROM SkillLevel ORDER BY SkillVal ASC;";
+		
+		//Runs it.
+		Vector<Vector<String>> results = getData(sql);
+		
+		Vector<String> names = new Vector<String>();
+		for(int i = 1; i < results.size(); i++){
+			names.add(results.elementAt(i).elementAt(0));
+		}
+		
+		//Returns.
+		return names;
+	}
+
+	public void createNewSkillLevel(String newSkillLevel) {
+		//First we need to get the lowest skill level.
+		int lowest = getLowestSkillLevel();
+		
+		String sql = "INSERT INTO SkillLevel VALUES(null,\"" + newSkillLevel + "\"," + (lowest + 1) + ");";
+		
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return;
+		}
+	}
+
+	private int getLowestSkillLevel() {
+		//Creates the sql statement.
+		String sql = "SELECT MAX(SkillVal) FROM SkillLevel;";
+		
+		//Runs it
+		Vector<Vector<String>> results = getData(sql);
+		if (results.size() < 1 || results.elementAt(1).elementAt(0) == null) return -1;
+		
+		return Integer.parseInt(results.elementAt(1).elementAt(0));
+	}
+
+	public int increaseSkillLevel(String selected) {
+		//Gets the current skill value.
+		String sql = "Select SkillName, SkillVal FROM SkillLevel ORDER BY SkillVal ASC;";
+		
+		//Runs it.
+		Vector<Vector<String>> results = getData(sql);
+		int i = 0;
+		for (i = 1; i < results.size(); i++){
+			if (results.elementAt(i).elementAt(0).equals(selected)) break;
+		}
+		if (i == 1) return -1;
+		
+		//Otherwise, we get the skill val and swap.
+		sql = "UPDATE SkillLevel SET SkillVal = " + results.elementAt(i).elementAt(1) + " WHERE SkillName = \"" +
+				results.elementAt(i - 1).elementAt(0) + "\";";
+		
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return -2;
+		}
+		
+		sql = "UPDATE SkillLevel SET SkillVal = " + results.elementAt(i - 1).elementAt(1) + " WHERE SkillName = \"" +
+				results.elementAt(i).elementAt(0) + "\";";
+		
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return -2;
+		}
+		
+		return 0;
+	}
+
+	public int decreaseSkillLevel(String selected) {
+		//Gets the current skill value.
+		String sql = "Select SkillName, SkillVal FROM SkillLevel ORDER BY SkillVal ASC;";
+		
+		//Runs it.
+		Vector<Vector<String>> results = getData(sql);
+		int i = 0;
+		for (i = 1; i < results.size(); i++){
+			if (results.elementAt(i).elementAt(0).equals(selected)) break;
+		}
+		if (i == results.size() - 1) return -1;
+		
+		//Otherwise, we get the skill val and swap.
+		sql = "UPDATE SkillLevel SET SkillVal = " + results.elementAt(i).elementAt(1) + " WHERE SkillName = \"" +
+				results.elementAt(i + 1).elementAt(0) + "\";";
+		
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return -2;
+		}
+		
+		sql = "UPDATE SkillLevel SET SkillVal = " + results.elementAt(i + 1).elementAt(1) + " WHERE SkillName = \"" +
+				results.elementAt(i).elementAt(0) + "\";";
+		
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return -2;
+		}
+		
+		return 0;
+	}
+
+	public void removeSkillLevel(String selected) {
+		String sql = "DELETE FROM SkillLevel WHERE SkillName = \"" + selected + "\";";
+				
+		//Executes the generated SQL statement.
+		try{
+			Statement query = conn.createStatement();
+			query.executeUpdate(sql);
+		} catch(SQLException e){
+			e.printStackTrace();
+			return;
+		}
+	}
+	
+	
+	private int getSkillLevelID(String skillLevel) {
+		//Gets the data.
+		String sql = "SELECT SkillID FROM SkillLevel WHERE SkillName = \"" + skillLevel + "\";";
+		Vector<Vector<String>> data = getData(sql);
+		
+		try {
+			return Integer.parseInt(data.elementAt(1).elementAt(0));
+		} catch (IndexOutOfBoundsException e){
+			e.printStackTrace();
+		}
+		
+		return -1;
+	}
+
+	public String getSkillLevelName(String skillID) {
+		//Gets the data.
+		String sql = "SELECT SkillName FROM SkillLevel WHERE SkillID = " + skillID + ";";
+		Vector<Vector<String>> data = getData(sql);
+		
+		try {
+			return data.elementAt(1).elementAt(0);
+		} catch (IndexOutOfBoundsException e){
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+
 }
