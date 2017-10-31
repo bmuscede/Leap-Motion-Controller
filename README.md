@@ -1,10 +1,10 @@
 Leap Motion Controller
 ======================
 
-###Project Details
-This is the software for the Leap Motion Controller thesis. This repo contains all the required files to build the Visualizer and main program. This is for Computer Science 4490Z thesis at The University of Western Ontario.
+### Project Details
+This is the software for the Leap Motion Controller thesis. This repo contains all the required files to build the Visualizer and main program. This is for Computer Science 4490Z thesis at The University of Western Ontario. The premise of this project is to create a tracking tool that allows for medical residents to be assessed on surgical skill by analyzing hand motions. This comes from (this paper)[https://academic.oup.com/ejcts/article/39/3/287/353822/Training-and-assessment-of-technical-skills-and].
 
-###Project Contents
+### Project Contents
 This repo contains two directories:
 - The Leap Motion Tracker (*LeapMotionTracker*)
     - This contains the files for the Java program.
@@ -13,7 +13,7 @@ This repo contains two directories:
     - This contains the files for the C# and Unity program.
     - This program is the visualizer for the project. While it is not needed for program functionality, it visualizes a user's hand motions in real time and shows them what the Leap Motion Controller is seeing.
 
-###Installation
+### Installation
 Currently, there is no good way to build the Leap Motion Controller project. To build, the Java and Unity programs need to be built separately.
 
 To build the Java program:
