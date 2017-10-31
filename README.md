@@ -2,7 +2,7 @@ Leap Motion Controller
 ======================
 
 ### Project Details
-This is the software for the Leap Motion Controller thesis. This repo contains all the required files to build the Visualizer and main program. This is for Computer Science 4490Z thesis at The University of Western Ontario. The premise of this project is to create a tracking tool that allows for medical residents to be assessed on surgical skill by analyzing hand motions. This comes from (this paper)[https://academic.oup.com/ejcts/article/39/3/287/353822/Training-and-assessment-of-technical-skills-and].
+This is the software for the Leap Motion Controller thesis. This repo contains all the required files to build the Visualizer and main program. This is for Computer Science 4490Z thesis at The University of Western Ontario. The premise of this project is to create a tracking tool that allows for medical residents to be assessed on surgical skill by analyzing hand motions. This comes from [this paper](https://academic.oup.com/ejcts/article/39/3/287/353822/Training-and-assessment-of-technical-skills-and).
 
 ### Project Contents
 This repo contains two directories:
